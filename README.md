@@ -80,3 +80,18 @@ The second command fails if the theorem fails or Lean is missing, and creates
 a separate attestation only after successful compilation. [Formal scope and
 remaining trust boundary](formal/README.md). This does not constitute a Lean
 proof of the Python compiler, nor a signed certificate.
+
+## v0.4 research branch: gate decoding moved into Lean
+
+The certificate now renders the original receipt's **gate names and ordered
+qubit indices as literal data**, e.g. `("CNOT", [1, 0])`, instead of selecting
+Lean gate constructors in Python. The new `formal/RawGateBridge.lean` defines
+the entire two-qubit name/arity/index map in Lean. An unknown name, invalid
+arity, or invalid index fails decoding and makes the theorem false. Successful
+attestations have schema `physqed-q-lean-theorem-attestation-v2`, contain the
+decoder file hash, and set `lean_gate_decoder_checked=true` after real Lean
+compilation. They still say `python_compiler_end_to_end_formalized=false`.
+
+The verified scope remains **two qubits, at most 16 gates in each receipt
+word, exact full-operator equality**; the original Python receipt is unchanged.
+This is an independently checkable extension, not a quantum-advantage claim.

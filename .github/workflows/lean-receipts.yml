@@ -2,7 +2,7 @@ name: Lean circuit-specific receipts
 
 on:
   push:
-    branches: ["main", "feature/receipt-*"]
+    branches: ["main", "feature/receipt-*", "feature/lean-native-*"]
     paths:
       - "formal/**"
       - "physqed_q/lean_certificate.py"
@@ -32,13 +32,15 @@ jobs:
       - uses: leanprover/lean-action@v1
         with:
           auto-config: false
-      - name: Kernel-check source modules and fixed witness
+      - name: Kernel-check source modules and fixed witnesses
         run: |
           mkdir -p /tmp/physqed_q_ci_lean
           lean -o /tmp/physqed_q_ci_lean/GateIdentities.olean formal/GateIdentities.lean
           LEAN_PATH=/tmp/physqed_q_ci_lean lean -o /tmp/physqed_q_ci_lean/TwoQubitSemantics.olean formal/TwoQubitSemantics.lean
           LEAN_PATH=/tmp/physqed_q_ci_lean lean formal/ReceiptWitness.lean
-      - name: Test genuine receipt-to-Lean bridge (including false theorem)
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean -o /tmp/physqed_q_ci_lean/RawGateBridge.olean formal/RawGateBridge.lean
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean formal/RawGateWitness.lean
+      - name: Test genuine receipt-to-Lean bridge and invalid receipt negatives
         run: |
           export PHYSQED_Q_LEAN_BIN="$(command -v lean)"
           python -m unittest discover -s tests -p test_lean_certificate.py -v

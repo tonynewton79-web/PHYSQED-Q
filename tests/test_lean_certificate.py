@@ -32,17 +32,20 @@ class GeneratedLeanTests(unittest.TestCase):
     def test_render_is_deterministic_and_binds_actual_gate_words(self):
         source = render_receipt_theorem(self.receipt)
         self.assertEqual(source, render_receipt_theorem(self.receipt))
-        self.assertIn("[.h0, .z0, .h0, .cnot01, .cnot01, .t0, .t0]", source)
-        self.assertIn("[.x0, .s0]", source)
-        self.assertIn("operatorEq (operator receiptInput) (operator receiptOutput)", source)
+        self.assertIn('[("H", [0]), ("Z", [0]), ("H", [0]),', source)
+        self.assertIn('("CNOT", [0, 1]), ("CNOT", [0, 1]),', source)
+        self.assertIn('[("X", [0]), ("S", [0])]', source)
+        self.assertIn("rawOperatorEq receiptInput receiptOutput", source)
+        self.assertIn("import RawGateBridge", source)
+        self.assertNotIn(".cnot01", source)
         self.assertNotIn("sorry", source)
         self.assertNotIn("axiom ", source)
 
-    def test_control_target_reversal_changes_lean_constructor(self):
+    def test_control_target_reversal_stays_as_raw_gate_data(self):
         reverse = {"name": "reverse", "qubits": 2,
                    "gates": [{"gate": "CNOT", "qubits": [1, 0]},
                              {"gate": "CNOT", "qubits": [1, 0]}]}
-        self.assertIn("[.cnot10, .cnot10]",
+        self.assertIn('[("CNOT", [1, 0]), ("CNOT", [1, 0])]',
                       render_receipt_theorem(compile_circuit(reverse)))
 
     def test_malicious_name_never_enters_lean_source(self):
@@ -79,16 +82,33 @@ class CompiledLeanTests(unittest.TestCase):
         report = certify_receipt(receipt,
                                  lean_executable=os.environ["PHYSQED_Q_LEAN_BIN"])
         self.assertTrue(report["lean_theorem_checked"])
+        self.assertTrue(report["lean_gate_decoder_checked"])
+        self.assertIn("RawGateBridge.lean", report["formal_source_sha256"])
         self.assertFalse(report["python_compiler_end_to_end_formalized"])
         self.assertEqual(report["receipt_sha256"], receipt["receipt_sha256"])
 
     def test_real_lean_rejects_false_target_operator(self):
         receipt = compile_circuit(EXAMPLE)
         source = render_receipt_theorem(receipt).replace(
-            "[.x0, .s0]", "[.z0, .s0]"
+            '[("X", [0]), ("S", [0])]', '[("Z", [0]), ("S", [0])]'
         )
         with self.assertRaises(LeanBridgeError):
             _run_source(source, lean_executable=os.environ["PHYSQED_Q_LEAN_BIN"])
+
+    def test_real_lean_rejects_invalid_raw_gate_not_silently_skipped(self):
+        source = render_receipt_theorem(compile_circuit(EXAMPLE))
+        for wrong in ('("INVALID", [0])', '("H", [0, 1])', '("H", [2])'):
+            with self.subTest(wrong=wrong):
+                altered = source.replace('("H", [0])', wrong, 1)
+                with self.assertRaises(LeanBridgeError):
+                    _run_source(altered,
+                                lean_executable=os.environ["PHYSQED_Q_LEAN_BIN"])
+
+    def test_real_lean_rejects_invalid_optimized_gate(self):
+        source = render_receipt_theorem(compile_circuit(EXAMPLE))
+        altered = source.replace('("S", [0])', '("S", [2])')
+        with self.assertRaises(LeanBridgeError):
+            _run_source(altered, lean_executable=os.environ["PHYSQED_Q_LEAN_BIN"])
 
     def test_all_ten_supported_gates_have_exact_two_qubit_semantics(self):
         patterns = [

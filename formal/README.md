@@ -60,3 +60,31 @@ signature and does not turn the original Python receipt's
 Python interpreter have not been proved sound *inside Lean*; the genuine Lean
 claim is equality of the full four-column operators in the published formal
 semantics for the explicitly generated gate words.
+
+## Lean-native raw gate decoder (v0.4 branch)
+
+`RawGateBridge.lean` adds `decodeGate`, `decodeCircuit`, and `rawOperatorEq`.
+`decodeGate` accepts the exact two-qubit PHYSQED-Q alphabet with ordered qubit
+lists, returning `Option QGate` rather than silently omitting unknown input.
+The name-to-constructor map, both CNOT control orientations, two-qubit arities,
+and out-of-range rejection are specified inside Lean. `rawOperatorEq` is false
+if either circuit does not decode. `RawGateWitness.lean` checks the seven-to-two
+gate example from raw text-and-index data; generated receipt theorems use the
+same syntax.
+
+The Python renderer is still responsible for reading, validating, and quoting
+JSON data into Lean syntax, and the Python optimizer and receipt-verification
+algorithms remain outside the formal proof. A positive v2 attestation records
+both `lean_theorem_checked=true` and `lean_gate_decoder_checked=true`; neither
+value retroactively changes the original receipt or proves real-hardware
+correctness. An attestation cannot authenticate who authored the data.
+
+Standalone Lean smoke check (after compiling dependencies to the stated
+`LEAN_PATH`):
+
+```bash
+lean -o /tmp/physqed_lean/GateIdentities.olean formal/GateIdentities.lean
+LEAN_PATH=/tmp/physqed_lean lean -o /tmp/physqed_lean/TwoQubitSemantics.olean formal/TwoQubitSemantics.lean
+LEAN_PATH=/tmp/physqed_lean lean -o /tmp/physqed_lean/RawGateBridge.olean formal/RawGateBridge.lean
+LEAN_PATH=/tmp/physqed_lean lean formal/RawGateWitness.lean
+```

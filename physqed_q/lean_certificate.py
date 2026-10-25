@@ -20,31 +20,26 @@ from .compiler import CertificateError, verify_receipt
 MAX_LEAN_GATES = 16
 MAX_JSON_BYTES = 256 * 1024
 LEAN_VERSION = "4.24.0"
-REPORT_SCHEMA = "physqed-q-lean-theorem-attestation-v1"
+REPORT_SCHEMA = "physqed-q-lean-theorem-attestation-v2"
 FORMAL_DIR = Path(__file__).resolve().parent.parent / "formal"
-SINGLE_GATE = {"H": "h", "X": "x", "Z": "z", "S": "s",
-               "SDG": "sdg", "T": "t", "TDG": "tdg"}
 
 
 class LeanBridgeError(ValueError):
     """Refused a receipt or a missing/failed Lean check."""
 
 
-def _gate_constructor(gate):
-    kind, targets = gate["gate"], tuple(gate["qubits"])
-    if kind in SINGLE_GATE:
-        return "." + SINGLE_GATE[kind] + str(targets[0])
-    if kind == "CNOT":
-        return ".cnot01" if targets == (0, 1) else ".cnot10"
-    if kind == "CZ":
-        return ".cz"
-    if kind == "SWAP":
-        return ".swap"
-    raise LeanBridgeError("unexpected gate after receipt validation")
+def _lean_raw_word(gates):
+    """Render bounded, already-validated data; gate meaning is decoded in Lean.
 
-
-def _lean_word(gates):
-    return "[" + ", ".join(_gate_constructor(gate) for gate in gates) + "]"
+    Validation rejects arbitrary names and qubit values before this function;
+    JSON encoding supplies a deterministic quoted ASCII gate-name literal.
+    This function does not translate gate operations into Lean constructors.
+    """
+    return "[" + ", ".join(
+        "(" + json.dumps(gate["gate"], ensure_ascii=True) + ", [" +
+        ", ".join(str(q) for q in gate["qubits"]) + "])"
+        for gate in gates
+    ) + "]"
 
 
 def render_receipt_theorem(receipt):
@@ -63,18 +58,18 @@ def render_receipt_theorem(receipt):
         raise LeanBridgeError("Lean receipt bridge currently supports exactly two qubits")
     if len(source["gates"]) > MAX_LEAN_GATES or len(target["gates"]) > MAX_LEAN_GATES:
         raise LeanBridgeError("Lean receipt bridge has a limit of sixteen gates")
-    first, second = _lean_word(source["gates"]), _lean_word(target["gates"])
+    first, second = _lean_raw_word(source["gates"]), _lean_raw_word(target["gates"])
     return (
-        "import TwoQubitSemantics\n\n"
+        "import RawGateBridge\n\n"
         "set_option maxRecDepth 10000\n"
         "set_option maxHeartbeats 0\n\n"
         "open PHYSQEDQ\n\n"
         f"-- Untrusted receipt integrity reference: {receipt['receipt_sha256']}\n"
-        f"def receiptInput : List QGate := {first}\n"
-        f"def receiptOutput : List QGate := {second}\n\n"
+        f"def receiptInput : List RawGate := {first}\n"
+        f"def receiptOutput : List RawGate := {second}\n\n"
         "theorem receiptFullOperatorEquality :\n"
-        "    operatorEq (operator receiptInput) (operator receiptOutput) := by\n"
-        "  unfold operatorEq stateEq eEq qEq\n"
+        "    rawOperatorEq receiptInput receiptOutput := by\n"
+        "  unfold rawOperatorEq\n"
         "  decide\n"
     )
 
@@ -87,7 +82,8 @@ def _checked_process(command, *, cwd, env, timeout_seconds):
     except (OSError, subprocess.TimeoutExpired, UnicodeError) as exc:
         raise LeanBridgeError("Lean executable unavailable or verification timed out") from exc
     if result.returncode != 0:
-        detail = (result.stdout + result.stderr)[-2500:].strip()
+        output = (result.stdout + result.stderr).strip()
+        detail = output if len(output) <= 2500 else output[:900] + "\n...\n" + output[-1500:]
         raise LeanBridgeError("Lean rejected generated theorem: " + detail)
     return result.stdout.strip()
 
@@ -112,7 +108,7 @@ def _run_source(source, *, lean_executable="lean", timeout_seconds=30):
         root = Path(directory)
         before = env.get("LEAN_PATH")
         env["LEAN_PATH"] = str(root) + (os.pathsep + before if before else "")
-        for module in ("GateIdentities", "TwoQubitSemantics"):
+        for module in ("GateIdentities", "TwoQubitSemantics", "RawGateBridge"):
             _checked_process(
                 [lean_executable, "-o", str(root / (module + ".olean")),
                  str(FORMAL_DIR / (module + ".lean"))],
@@ -136,10 +132,11 @@ def certify_receipt(receipt, *, lean_executable="lean", timeout_seconds=30):
         "lean_source_sha256": hashlib.sha256(source.encode("utf-8")).hexdigest(),
         "formal_source_sha256": {
             filename: hashlib.sha256((FORMAL_DIR / filename).read_bytes()).hexdigest()
-            for filename in ("GateIdentities.lean", "TwoQubitSemantics.lean")
+            for filename in ("GateIdentities.lean", "TwoQubitSemantics.lean", "RawGateBridge.lean")
         },
         "lean_compiler": version,
         "lean_theorem_checked": True,
+        "lean_gate_decoder_checked": True,
         "python_receipt_checked": True,
         "python_compiler_end_to_end_formalized": False,
         "kernel_scope": "two-qubit four-column exact operator in explicit Q(sqrt(2),i) Lean model",
