@@ -1,0 +1,13 @@
+{
+  "name": "Exact three-rule optimizer witness",
+  "qubits": 2,
+  "gates": [
+    {"gate": "H", "qubits": [0]},
+    {"gate": "Z", "qubits": [0]},
+    {"gate": "H", "qubits": [0]},
+    {"gate": "CNOT", "qubits": [0, 1]},
+    {"gate": "CNOT", "qubits": [0, 1]},
+    {"gate": "T", "qubits": [0]},
+    {"gate": "T", "qubits": [0]}
+  ]
+}

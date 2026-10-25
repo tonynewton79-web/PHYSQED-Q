@@ -1,0 +1,9 @@
+{
+  "name": "GHZ three-qubit state",
+  "qubits": 3,
+  "gates": [
+    {"gate": "H", "qubits": [0]},
+    {"gate": "CNOT", "qubits": [0, 1]},
+    {"gate": "CNOT", "qubits": [0, 2]}
+  ]
+}

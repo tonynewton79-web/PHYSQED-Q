@@ -1,0 +1,42 @@
+name: PHYSQED-Q exact compiler
+
+on:
+  push:
+    branches: ["main", "feature/physqed-q-*"]
+    paths:
+      - "physqed_q/**"
+      - "tests/**"
+      - "examples/**"
+      - "README.md"
+      - "DESIGN.md"
+      - ".github/workflows/physqed-q.yml"
+  pull_request:
+    paths:
+      - "physqed_q/**"
+      - "tests/**"
+      - "examples/**"
+      - "README.md"
+      - "DESIGN.md"
+      - ".github/workflows/physqed-q.yml"
+
+jobs:
+  exact-replay:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run exact kernel, adversarial and CLI tests
+        env:
+          PYTHONPATH: .
+        run: python -m unittest discover -s tests -v
+      - name: Independent CLI replay
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m physqed_q compile examples/optimize.json --output /tmp/physqed-q-receipt.json
+          python -m physqed_q verify /tmp/physqed-q-receipt.json

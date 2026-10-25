@@ -1,0 +1,8 @@
+{
+  "name": "Bell pair |00> + |11>",
+  "qubits": 2,
+  "gates": [
+    {"gate": "H", "qubits": [0]},
+    {"gate": "CNOT", "qubits": [0, 1]}
+  ]
+}
