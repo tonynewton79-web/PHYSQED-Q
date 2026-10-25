@@ -71,6 +71,14 @@
             <div class="status-mark" id="status-mark">○</div><div><div class="status-caption">CERTIFICATE STATUS</div><h3 id="status-title">Awaiting verification</h3><p id="status-detail">Compile a circuit to obtain independent exact-operator evidence.</p></div>
           </div>
 
+          <div class="input-group optimizer-field">
+            <label class="field-label" for="optimizer">Optimization strategy</label>
+            <select id="optimizer" aria-describedby="optimizer-help">
+              <option value="adjacent">Adjacent rewrites (default · v1)</option>
+              <option value="commuting">Disjoint commutation (opt-in · v2)</option>
+            </select>
+            <p id="optimizer-help">Opt-in commutation moves only disjoint gates. Both strategies verify the full exact operator; Lean is a separate optional check.</p>
+          </div>
           <button type="button" id="run-button" class="btn btn-primary"><span class="button-glyph">▶</span><span>Optimize &amp; Verify</span><span class="button-end">→</span></button>
           <p class="button-footnote">Python computes exact matrices and replays every rewrite.</p>
 

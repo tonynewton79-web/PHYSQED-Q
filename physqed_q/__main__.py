@@ -54,6 +54,8 @@ def main(argv=None):
     compiler = sub.add_parser("compile", help="compile JSON circuit and generate exact certificate")
     compiler.add_argument("input", help="input circuit JSON")
     compiler.add_argument("--output", help="optional path for JSON receipt")
+    compiler.add_argument("--optimizer", choices=["adjacent", "commuting"], default="adjacent",
+                          help="rewrite strategy (default: adjacent; commuting is opt-in)")
     verifier = sub.add_parser("verify", help="independently replay a JSON receipt")
     verifier.add_argument("receipt", help="receipt file")
     demonstration = sub.add_parser("demo", help="exact Bell/GHZ state amplitudes")
@@ -61,7 +63,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.command == "compile":
-            receipt = compile_circuit(_load(args.input))
+            receipt = compile_circuit(_load(args.input), optimizer=args.optimizer)
             if args.output:
                 Path(args.output).write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n",
                                              encoding="utf-8")

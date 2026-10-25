@@ -21,6 +21,36 @@ def invoke(*args):
 
 
 class CommandLineTests(unittest.TestCase):
+    def test_optimizer_is_opt_in_and_commuting_receipt_replays(self):
+        circuit = {"name": "Interleaved", "qubits": 2, "gates": [
+            {"gate": "H", "qubits": [0]}, {"gate": "X", "qubits": [1]},
+            {"gate": "H", "qubits": [0]},
+        ]}
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "circuit.json"
+            target = Path(folder) / "receipt.json"
+            source.write_text(json.dumps(circuit), encoding="utf-8")
+            default = invoke("compile", source)
+            self.assertEqual(default.returncode, 0, default.stderr)
+            legacy = json.loads(default.stdout)
+            self.assertEqual(legacy["schema"], "physqed-q-exact-receipt-v1")
+            self.assertEqual(len(legacy["optimized"]["gates"]), 3)
+            made = invoke("compile", source, "--optimizer", "commuting", "--output", target)
+            self.assertEqual(made.returncode, 0, made.stderr)
+            receipt = json.loads(target.read_text(encoding="utf-8"))
+            self.assertEqual(receipt["schema"], "physqed-q-exact-receipt-v2")
+            self.assertEqual(receipt["optimized"]["gates"], [{"gate": "X", "qubits": [1]}])
+            self.assertFalse(receipt["scope"]["lean_kernel_verified"])
+            checked = invoke("verify", target)
+            self.assertEqual(checked.returncode, 0, checked.stderr)
+            self.assertTrue(json.loads(checked.stdout)["verified"])
+            explicit = invoke("compile", source, "--optimizer", "adjacent")
+            self.assertEqual(explicit.returncode, 0, explicit.stderr)
+            self.assertEqual(json.loads(explicit.stdout), legacy)
+            rejected = invoke("compile", source, "--optimizer", "unknown")
+            self.assertEqual(rejected.returncode, 2)
+            self.assertEqual(rejected.stdout, "")
+
     def test_compiles_receipt_and_replays_it_from_file(self):
         source = PROJECT / "examples" / "optimize.json"
         with tempfile.TemporaryDirectory() as folder:

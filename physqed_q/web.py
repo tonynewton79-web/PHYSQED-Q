@@ -159,10 +159,14 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
         try:
             payload = self._read_json_body()
             field = "circuit" if path == "/api/compile" else "receipt"
-            if set(payload) != {field}:
+            allowed = {"circuit", "optimizer"} if path == "/api/compile" else {field}
+            if field not in payload or not set(payload) <= allowed:
                 raise _HTTPInputError(400, "expected only the '" + field + "' field")
             if path == "/api/compile":
-                receipt = compile_circuit(payload["circuit"])
+                optimizer = payload.get("optimizer", "adjacent")
+                if type(optimizer) is not str or optimizer not in {"adjacent", "commuting"}:
+                    raise _HTTPInputError(400, "optimizer must be 'adjacent' or 'commuting'")
+                receipt = compile_circuit(payload["circuit"], optimizer=optimizer)
                 result = {"receipt": receipt, "verification": verify_receipt(receipt)}
             elif path == "/api/verify":
                 result = {"verification": verify_receipt(payload["receipt"])}

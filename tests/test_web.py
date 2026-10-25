@@ -74,6 +74,47 @@ class WorkbenchHTTPTests(unittest.TestCase):
         self.assertEqual(status, 422)
         self.assertFalse(json.loads(result)["ok"])
 
+    def test_optimizer_is_opt_in_and_both_receipt_versions_replay(self):
+        circuit = {"name": "Interleaved", "qubits": 2, "gates": [
+            {"gate": "H", "qubits": [0]}, {"gate": "X", "qubits": [1]},
+            {"gate": "H", "qubits": [0]},
+        ]}
+        for extra, schema, count in (
+            ({}, "physqed-q-exact-receipt-v1", 3),
+            ({"optimizer": "adjacent"}, "physqed-q-exact-receipt-v1", 3),
+            ({"optimizer": "commuting"}, "physqed-q-exact-receipt-v2", 1),
+        ):
+            with self.subTest(extra=extra):
+                status, _, body = self.request("POST", "/api/compile", {"circuit": circuit, **extra})
+                self.assertEqual(status, 200, body)
+                data = json.loads(body)
+                receipt = data["receipt"]
+                self.assertEqual(receipt["schema"], schema)
+                self.assertEqual(len(receipt["optimized"]["gates"]), count)
+                self.assertTrue(data["verification"]["verified"])
+                self.assertFalse(data["verification"]["lean_kernel_verified"])
+                status, _, replay = self.request("POST", "/api/verify", {"receipt": receipt})
+                self.assertEqual(status, 200, replay)
+                self.assertTrue(json.loads(replay)["verification"]["verified"])
+
+    def test_rejects_invalid_optimizer_and_preserves_endpoint_shapes(self):
+        for value in ("", "unknown", "COMMUTING", None, True, 1, [], {}):
+            with self.subTest(value=value):
+                status, _, body = self.request("POST", "/api/compile",
+                                               {"circuit": EXAMPLE, "optimizer": value})
+                self.assertEqual(status, 400, body)
+                self.assertFalse(json.loads(body)["ok"])
+        for path, payload in (
+            ("/api/compile", {"optimizer": "commuting"}),
+            ("/api/compile", {"circuit": EXAMPLE, "optimizer": "commuting", "extra": 1}),
+            ("/api/verify", {"receipt": {}, "optimizer": "commuting"}),
+            ("/api/lean", {"receipt": {}, "optimizer": "commuting"}),
+        ):
+            with self.subTest(path=path, payload=payload):
+                status, _, body = self.request("POST", path, payload)
+                self.assertEqual(status, 400, body)
+                self.assertFalse(json.loads(body)["ok"])
+
     def test_examples_are_real_repo_files(self):
         status, _, body = self.request("GET", "/api/examples/optimize")
         self.assertEqual(status, 200)

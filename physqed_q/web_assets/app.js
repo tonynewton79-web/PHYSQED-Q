@@ -323,7 +323,7 @@ async function optimizeAndVerify() {
   $("run-button").disabled = true;
   status("running", "Checking exact operators…", "Applying permitted rewrites and independently replaying the receipt.");
   try {
-    const result = await api("/api/compile", { circuit: state.circuit });
+    const result = await api("/api/compile", { circuit: state.circuit, optimizer: $("optimizer").value });
     if (revision !== state.revision || epoch !== state.proofEpoch) return;
     if (result.verification.verified !== true) throw new Error("The server did not verify the result.");
     state.receipt = result.receipt;
@@ -425,6 +425,7 @@ function bindControls() {
   $("add-gate").addEventListener("click", addGate);
   $("reset-circuit").addEventListener("click", () => loadCircuit({ name: "Untitled circuit", qubits: 2, gates: [] }));
   $("run-button").addEventListener("click", optimizeAndVerify);
+  $("optimizer").addEventListener("change", dirty);
   $("recheck-button").addEventListener("click", replayReceipt);
   $("lean-button").addEventListener("click", attestLean);
   $("download-receipt").addEventListener("click", () => {

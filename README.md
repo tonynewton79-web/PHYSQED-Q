@@ -6,7 +6,38 @@
 
 An independent module of Tony Newton's PHYSQED programme, implemented as a **bounded, exact quantum software prototype**. It transforms gate sequences using a small specified rule catalogue, recomputes complete operators in Q(√2,i), and emits self-contained evidence that a separate invocation can replay. This is not a quantum processing unit or a claim of quantum speedup.
 
-## v0.5 visual Python workbench (development branch)
+## v0.6A: opt-in certified disjoint commutation (development branch)
+
+The default `adjacent` policy and v1 receipt format are unchanged. Select
+`commuting` explicitly to emit a v2 receipt: after adjacent reductions, it
+can move a gate across gates on disjoint qubits to expose an existing
+two-gate reduction. It does not commute overlapping gates or search for a
+globally optimal circuit. The workbench has the same opt-in optimizer selector.
+To try the witness visually, import `examples/commuting.json` into the editor
+and select the commuting strategy before choosing **Optimize & Verify**.
+
+```bash
+python3 -m physqed_q compile examples/commuting.json --optimizer commuting --output /tmp/physqed-q-commuting.json
+python3 -m physqed_q verify /tmp/physqed-q-commuting.json
+python3 -m benchmarks.commuting_suite
+```
+
+For this fixture, `H(0), X(1), H(0)` becomes `X(1)`: the adjacent policy
+leaves 3 gates at depth 2, while the commuting policy gives 1 gate at depth 1.
+Both have T count 0. The verifier independently replays every recorded swap
+and reduction, checks the full exact operator after every step and at the
+endpoint, and recomputes the metrics. `verify` supports both receipt versions.
+The public SHA-256 digest is integrity evidence, not an authenticity signature.
+
+The deterministic [internal benchmark](benchmarks/README.md) also includes
+an adjacent-reduction parity case and a blocked overlapping-gate case. These
+three selected examples measure only the two internal policies, not general
+compiler optimality, hardware fidelity, or an external optimizer comparison.
+Runtime remains Python-standard-library-only with the same 0–4 qubit,
+64-input-gate bound. Python replay does not invoke Lean or verify hardware;
+the receipt flags `lean_kernel_verified` and `hardware_verified` remain false.
+
+## v0.5 visual Python workbench
 
 PHYSQED-Q now has a local graphical interface driven by the actual Python
 compiler and replay verifier. It needs only Python 3.11+ and a modern browser:
@@ -46,9 +77,7 @@ node tests/test_web_ui.mjs
 ```
 
 Node is used only to run JavaScript developer tests; the workbench itself has
-no Node/npm or third-party Python runtime dependency. The GitHub branch for
-v0.5 is stacked on the v0.4 development branch and must pass review before
-integration into `main`.
+no Node/npm or third-party Python runtime dependency.
 
 ## Run (no installation or third-party packages)
 

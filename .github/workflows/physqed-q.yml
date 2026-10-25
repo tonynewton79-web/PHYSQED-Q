@@ -2,11 +2,12 @@ name: PHYSQED-Q exact compiler
 
 on:
   push:
-    branches: ["main", "feature/physqed-q-*", "feature/visual-*"]
+    branches: ["main", "feature/physqed-q-*", "feature/visual-*", "feature/certified-commutation-*"]
     paths:
       - "physqed_q/**"
       - "tests/**"
       - "examples/**"
+      - "benchmarks/**"
       - "README.md"
       - "DESIGN.md"
       - ".github/workflows/physqed-q.yml"
@@ -15,6 +16,7 @@ on:
       - "physqed_q/**"
       - "tests/**"
       - "examples/**"
+      - "benchmarks/**"
       - "README.md"
       - "DESIGN.md"
       - ".github/workflows/physqed-q.yml"
@@ -34,12 +36,22 @@ jobs:
         env:
           PYTHONPATH: .
         run: python -m unittest discover -s tests -v
+      - name: Check internal commuting corpus and deterministic JSON
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m unittest tests.test_commuting_benchmark -v
+          python -m benchmarks.commuting_suite > /tmp/commuting-first.json
+          python -m benchmarks.commuting_suite > /tmp/commuting-second.json
+          cmp /tmp/commuting-first.json /tmp/commuting-second.json
       - name: Independent CLI replay
         env:
           PYTHONPATH: .
         run: |
           python -m physqed_q compile examples/optimize.json --output /tmp/physqed-q-receipt.json
           python -m physqed_q verify /tmp/physqed-q-receipt.json
+          python -m physqed_q compile examples/commuting.json --optimizer commuting --output /tmp/physqed-q-commuting.json
+          python -m physqed_q verify /tmp/physqed-q-commuting.json
 
   visual-workbench:
     runs-on: ubuntu-latest
@@ -50,5 +62,5 @@ jobs:
           node-version: "22"
       - name: Check web editor JavaScript syntax
         run: node --check physqed_q/web_assets/app.js
-      - name: Test circuit editor state and preset race protection
+      - name: Test circuit editor state, optimizer selector and preset race protection
         run: node tests/test_web_ui.mjs
