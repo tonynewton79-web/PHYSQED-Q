@@ -39,15 +39,15 @@ The verifier replays `HZH_to_X`, `CNOT_inverse`, `TT_to_S`, recomputes the compl
 - State evolution is unitary and deterministic; equality is of **complete operators**, not merely one prepared state and not up to global phase.
 - A SHA-256 receipt fingerprint detects ordinary modification but is not an authenticity signature; the verifier treats every input as untrusted regardless of digest.
 - The gate-depth metric uses greedy earliest scheduling on disjoint qubits; it is not hardware-aware timing.
-- No Lean kernel is invoked; `lean_kernel_verified=false`. No physical hardware is used; `hardware_verified=false` and `quantum_advantage_demonstrated=false`.
+- The base `compile` and `verify` commands do not invoke Lean; `lean_kernel_verified=false` remains correct for their receipts. The separate optional v0.3 bridge invokes Lean on a bounded generated theorem. No physical hardware is used; `hardware_verified=false` and `quantum_advantage_demonstrated=false`.
 
-The exact evaluator and rewrite patterns are in separate modules; the verifier explicitly checks the semantics of each transformation rather than trusting only pattern names or hashes. The tests include independent expected finite-state amplitudes and adversarial alteration checks. A broader independently implemented physics semantics reference, formal Lean gate-semantics proof, noise model, connectivity-aware compiler and Qiskit/Cirq resource comparisons remain future development.
+The exact evaluator and rewrite patterns are in separate modules; the verifier explicitly checks the semantics of each transformation rather than trusting only pattern names or hashes. The tests include independent expected finite-state amplitudes and adversarial alteration checks. End-to-end formalisation of the Python compiler, larger circuit semantics, noise models, connectivity-aware compilation, and held-out external comparisons remain future development.
 
 ## Security and provenance
 
 The CLI accepts data-only JSON. It refuses unexpected fields, noninteger indices, repeated qubits, unsupported gates, oversize inputs, and noncanonical receipts. Inputs never execute code. This module is a clean-room design, not a derivative of the separately reviewed UUIDNA QPU package (published under CC-BY-NC-ND-4.0).
 
-Author: Tony Newton — Newton Astro Labs. Public research prototype; no external hardware or Lean proof is claimed for any per-circuit receipt. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
+Author: Tony Newton — Newton Astro Labs. Public research prototype; ordinary Python receipts make no Lean-kernel claim, while the optional bounded bridge emits a separately scoped theorem attestation. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
 
 ## v0.2 research branch: checked gate catalogue and external baseline
 
@@ -61,3 +61,22 @@ records reproducible ideal gate/depth metrics, fixed transpiler settings,
 and exactly which external outputs can be compared under PHYSQED-Q's strict
 operator convention. The current selected examples show parity with Qiskit
 optimization level 3, **not** a superiority result.
+
+## v0.3 research branch: a Lean theorem for an actual receipt
+
+For a bounded **two-qubit circuit with at most 16 input gates**, the new
+bridge generates Lean source explicitly naming the receipt's input and
+optimized gate sequences, then compiles a complete four-column operator
+equality with the pinned Lean 4.24.0 kernel:
+
+```bash
+python3 -m physqed_q compile examples/optimize.json --output /tmp/physqed_receipt.json
+python3 -m physqed_q.lean_certificate /tmp/physqed_receipt.json \
+  --lean lean --emit-lean /tmp/physqed_receipt.lean \
+  --output /tmp/physqed_attestation.json
+```
+
+The second command fails if the theorem fails or Lean is missing, and creates
+a separate attestation only after successful compilation. [Formal scope and
+remaining trust boundary](formal/README.md). This does not constitute a Lean
+proof of the Python compiler, nor a signed certificate.

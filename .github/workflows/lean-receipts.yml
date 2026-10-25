@@ -1,0 +1,46 @@
+name: Lean circuit-specific receipts
+
+on:
+  push:
+    branches: ["main", "feature/receipt-*"]
+    paths:
+      - "formal/**"
+      - "physqed_q/lean_certificate.py"
+      - "physqed_q/compiler.py"
+      - "physqed_q/kernel.py"
+      - "tests/test_lean_certificate.py"
+      - "lean-toolchain"
+      - ".github/workflows/lean-receipts.yml"
+  pull_request:
+    paths:
+      - "formal/**"
+      - "physqed_q/lean_certificate.py"
+      - "physqed_q/compiler.py"
+      - "physqed_q/kernel.py"
+      - "tests/test_lean_certificate.py"
+      - "lean-toolchain"
+      - ".github/workflows/lean-receipts.yml"
+
+jobs:
+  compile-generated-theorems:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+      - name: Kernel-check source modules and fixed witness
+        run: |
+          mkdir -p /tmp/physqed_q_ci_lean
+          lean -o /tmp/physqed_q_ci_lean/GateIdentities.olean formal/GateIdentities.lean
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean -o /tmp/physqed_q_ci_lean/TwoQubitSemantics.olean formal/TwoQubitSemantics.lean
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean formal/ReceiptWitness.lean
+      - name: Test genuine receipt-to-Lean bridge (including false theorem)
+        run: |
+          export PHYSQED_Q_LEAN_BIN="$(command -v lean)"
+          python -m unittest discover -s tests -p test_lean_certificate.py -v
+      - name: Run standard Python regressions
+        run: python -m unittest discover -s tests -v

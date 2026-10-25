@@ -29,3 +29,34 @@ equivalence of the Lean and Python implementations, quantum speedup, or
 physical hardware. In particular, `lean_kernel_verified` in existing JSON
 receipts remains `false`. No user should infer a Lean-backed per-receipt
 certificate from the presence of these theorem files.
+
+## Two-qubit circuit-specific theorems (v0.3 branch)
+
+`TwoQubitSemantics.lean` adds an exact four-component state representation
+with the full ten-gate PHYSQED-Q alphabet on two qubits. The complete
+operator is the four-tuple of all four computational-basis output columns.
+It includes checks for both CNOT orientations, SWAP, CZ's negative phase,
+and both Hadamard qubit locations.
+
+`ReceiptWitness.lean` is a compiled concrete theorem for the seven-gate
+example. More importantly, `physqed_q/lean_certificate.py` can deterministically
+turn a *validated* two-qubit JSON receipt of at most 16 gates into its own
+Lean theorem, compiling the actual generated theorem against freshly compiled
+formal definitions before returning a positive report.
+
+```bash
+python3 -m physqed_q compile examples/optimize.json --output /tmp/physqed_receipt.json
+python3 -m physqed_q.lean_certificate /tmp/physqed_receipt.json \
+  --lean lean --emit-lean /tmp/physqed_receipt.lean \
+  --output /tmp/physqed_attestation.json
+```
+
+The second command **requires a trusted Lean 4.24.0 installation** and returns
+an error if it is unavailable, has the wrong version, or rejects the theorem.
+The attestation contains the receipt hash, generated-source hash, formal-source
+hashes, compiler version, and `lean_theorem_checked=true`. It has no digital
+signature and does not turn the original Python receipt's
+`lean_kernel_verified=false` into true. The translation into Lean and the
+Python interpreter have not been proved sound *inside Lean*; the genuine Lean
+claim is equality of the full four-column operators in the published formal
+semantics for the explicitly generated gate words.
