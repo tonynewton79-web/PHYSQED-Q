@@ -6,6 +6,44 @@
 
 An independent module of Tony Newton's PHYSQED programme, implemented as a **bounded, exact quantum software prototype**. It transforms gate sequences using a small specified rule catalogue, recomputes complete operators in Q(√2,i), and emits self-contained evidence that a separate invocation can replay. This is not a quantum processing unit or a claim of quantum speedup.
 
+## Bounded exact one-qubit optimality (development branch)
+
+The separate `synthesize` command exhaustively searches the ordered alphabet
+`(H, X, Z, S, SDG, T, TDG)` through a declared integer horizon `0 <= h <= 5`
+(default 5), including the empty word. Input is exactly one qubit with at most
+64 gates from this alphabet. A successful receipt certifies the following:
+among all words of length at most `h` with the same **full exact operator**
+in Q(√2,i), the winner minimizes, lexicographically,
+`(total gate count, T count, alphabet-order word)`. T and TDG each cost one
+T gate; the last tie-break follows the declared alphabet, not Unicode order.
+On one qubit, gate count also equals circuit depth.
+
+```bash
+python3 -m physqed_q synthesize examples/optimality.json --horizon 5 --output /tmp/physqed-q-optimality.json
+python3 -m physqed_q verify-optimality /tmp/physqed-q-optimality.json
+python3 -m unittest tests.test_optimality tests.test_cli -v
+```
+
+This deterministic witness transforms `H X H` into the one-gate word `Z`.
+Both generation and independent replay account for every word:
+`N(h) = sum(7**k for k in range(h+1))`, or **19,608 cases at horizon 5**,
+even when a zero-gate identity wins. The verifier reruns its own exhaustive
+enumeration, relative to the shared exact arithmetic and gate-semantics kernel;
+it does not trust the declared winner, count, costs or digest as proof.
+If no exact representative exists within the horizon, synthesis rejects with
+exit code 2 and emits no certificate or success JSON. Invalid inputs and
+tampered receipts likewise reject. Without `--output`, synthesis prints the
+receipt directly; with it, the CLI prints the path, digest and equivalence flag.
+
+This is a bounded alphabet-relative minimum, **not a global compiler** or a
+claim about alternative gate libraries, ancillas, two-qubit circuits,
+approximation, gate latencies or physical hardware. Global phase is exact,
+not ignored. The distinct `physqed-q-bounded-optimality-v1` schema explicitly
+keeps Lean, hardware and quantum-advantage flags false; the digest detects
+corruption, not authenticity. It is not Lean certification of the search or
+kernel. Ordinary `compile`/`verify`, legacy receipts, the loopback HTTP API and
+public UI are unchanged. No additional runtime dependencies are required.
+
 ## v0.6A: opt-in certified disjoint commutation (development branch)
 
 The default `adjacent` policy and v1 receipt format are unchanged. Select

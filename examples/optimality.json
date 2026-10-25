@@ -1,0 +1,9 @@
+{
+  "name": "H-X-H bounded optimality witness",
+  "qubits": 1,
+  "gates": [
+    {"gate": "H", "qubits": [0]},
+    {"gate": "X", "qubits": [0]},
+    {"gate": "H", "qubits": [0]}
+  ]
+}

@@ -7,6 +7,7 @@ import sys
 
 from .compiler import CertificateError, compile_circuit, verify_receipt
 from .kernel import CircuitError, evolve, validate_circuit, ZERO
+from .optimality import OptimalityError, certify_optimality, verify_optimality
 
 
 MAX_JSON_BYTES = 262144
@@ -58,12 +59,22 @@ def main(argv=None):
                           help="rewrite strategy (default: adjacent; commuting is opt-in)")
     verifier = sub.add_parser("verify", help="independently replay a JSON receipt")
     verifier.add_argument("receipt", help="receipt file")
+    synthesizer = sub.add_parser("synthesize", help="certify bounded exact one-qubit gate-count minimum")
+    synthesizer.add_argument("input", help="one-qubit input circuit JSON")
+    synthesizer.add_argument("--horizon", type=int, default=5,
+                             help="exhaustive search horizon, 0–5 (default: 5)")
+    synthesizer.add_argument("--output", help="optional path for JSON receipt")
+    optimality_verifier = sub.add_parser("verify-optimality", help="exhaustively recheck bounded optimality")
+    optimality_verifier.add_argument("receipt", help="bounded optimality receipt file")
     demonstration = sub.add_parser("demo", help="exact Bell/GHZ state amplitudes")
     demonstration.add_argument("which", choices=["bell", "ghz"])
     args = parser.parse_args(argv)
     try:
-        if args.command == "compile":
-            receipt = compile_circuit(_load(args.input), optimizer=args.optimizer)
+        if args.command in {"compile", "synthesize"}:
+            if args.command == "compile":
+                receipt = compile_circuit(_load(args.input), optimizer=args.optimizer)
+            else:
+                receipt = certify_optimality(_load(args.input), horizon=args.horizon)
             if args.output:
                 Path(args.output).write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n",
                                              encoding="utf-8")
@@ -73,9 +84,11 @@ def main(argv=None):
                 _print_json(receipt)
         elif args.command == "verify":
             _print_json(verify_receipt(_load(args.receipt)))
+        elif args.command == "verify-optimality":
+            _print_json(verify_optimality(_load(args.receipt)))
         else:
             _print_json(_demo(args.which))
-    except (CircuitError, CertificateError, ValueError, OSError, UnicodeError, RecursionError) as exc:
+    except (CircuitError, CertificateError, OptimalityError, ValueError, OSError, UnicodeError, RecursionError) as exc:
         print(f"REJECTED: {exc}", file=sys.stderr)
         return 2
     return 0

@@ -2,7 +2,7 @@ name: PHYSQED-Q exact compiler
 
 on:
   push:
-    branches: ["main", "feature/physqed-q-*", "feature/visual-*", "feature/certified-commutation-*"]
+    branches: ["main", "feature/physqed-q-*", "feature/visual-*", "feature/certified-commutation-*", "feature/bounded-optimality-*"]
     paths:
       - "physqed_q/**"
       - "tests/**"
@@ -52,6 +52,13 @@ jobs:
           python -m physqed_q verify /tmp/physqed-q-receipt.json
           python -m physqed_q compile examples/commuting.json --optimizer commuting --output /tmp/physqed-q-commuting.json
           python -m physqed_q verify /tmp/physqed-q-commuting.json
+      - name: Exhaustive bounded optimality tests and independent CLI replay
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m unittest tests.test_optimality tests.test_cli -v
+          python -m physqed_q synthesize examples/optimality.json --horizon 5 --output /tmp/physqed-q-optimality.json
+          python -m physqed_q verify-optimality /tmp/physqed-q-optimality.json
 
   visual-workbench:
     runs-on: ubuntu-latest
