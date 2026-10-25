@@ -1,10 +1,54 @@
-# PHYSQED-Q v0.1 — exact, replayable quantum-circuit compiler
+# PHYSQED-Q — exact quantum-circuit compiler and verification workbench
 
 [![Exact compiler CI](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml)
 
 **Canonical project repository:** [tonynewton79-web/PHYSQED-Q](https://github.com/tonynewton79-web/PHYSQED-Q). Source code, reproducible examples, independent tests, and verification workflow are maintained here.
 
 An independent module of Tony Newton's PHYSQED programme, implemented as a **bounded, exact quantum software prototype**. It transforms gate sequences using a small specified rule catalogue, recomputes complete operators in Q(√2,i), and emits self-contained evidence that a separate invocation can replay. This is not a quantum processing unit or a claim of quantum speedup.
+
+## v0.5 visual Python workbench (development branch)
+
+PHYSQED-Q now has a local graphical interface driven by the actual Python
+compiler and replay verifier. It needs only Python 3.11+ and a modern browser:
+
+```bash
+python3 -m physqed_q.web --port 8765
+```
+
+Open **http://127.0.0.1:8765/** in your browser (or supply `--open` to ask
+Python to launch your default browser). On Windows, `py -m physqed_q.web`
+also works with a suitable Python installation.
+
+The workbench provides:
+
+- A visual 1–4 qubit editor with all ten supported gate types, including
+  explicitly ordered CNOT controls and targets, gate reordering and removal.
+- Bell, GHZ and seven-to-two gate examples; import and export of source JSON.
+- An **Optimize & Verify** button that runs the real Python compiler and then
+  independently replays the complete exact-operator certificate.
+- Before/after gate count, circuit depth, T count, rule trace, the optimized
+  circuit diagram, operator SHA-256 digest and JSON receipt download.
+- An optional **Lean attest** button for supported two-qubit receipts when
+  Lean 4.24.0 is installed. Use `--lean /path/to/lean` if not on PATH.
+
+It binds to IPv4 loopback `127.0.0.1` only, rejects cross-origin writes and
+untrusted Host headers, and does not upload your circuits to a service. The
+visual interface adds no mathematical assumptions: successful replay is still
+the exact bounded Python check; Lean remains a separate, explicitly limited
+attestation. Neither proves real quantum-hardware behavior.
+
+To check the new HTTP API and JavaScript state behavior:
+
+```bash
+python3 -m unittest tests.test_web -v
+node --check physqed_q/web_assets/app.js
+node tests/test_web_ui.mjs
+```
+
+Node is used only to run JavaScript developer tests; the workbench itself has
+no Node/npm or third-party Python runtime dependency. The GitHub branch for
+v0.5 is stacked on the v0.4 development branch and must pass review before
+integration into `main`.
 
 ## Run (no installation or third-party packages)
 

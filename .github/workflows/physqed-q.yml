@@ -2,7 +2,7 @@ name: PHYSQED-Q exact compiler
 
 on:
   push:
-    branches: ["main", "feature/physqed-q-*"]
+    branches: ["main", "feature/physqed-q-*", "feature/visual-*"]
     paths:
       - "physqed_q/**"
       - "tests/**"
@@ -40,3 +40,15 @@ jobs:
         run: |
           python -m physqed_q compile examples/optimize.json --output /tmp/physqed-q-receipt.json
           python -m physqed_q verify /tmp/physqed-q-receipt.json
+
+  visual-workbench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check web editor JavaScript syntax
+        run: node --check physqed_q/web_assets/app.js
+      - name: Test circuit editor state and preset race protection
+        run: node tests/test_web_ui.mjs

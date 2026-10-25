@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07121f">
+  <meta name="description" content="PHYSQED-Q local exact quantum-circuit optimization and verification workbench">
+  <title>PHYSQED-Q | Quantum Verification Workbench</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="PHYSQED-Q workbench home">
+        <span class="brand-icon" aria-hidden="true">Q<span class="brand-spark">✦</span></span>
+        <span class="brand-wordmark">PHYSQED<span class="brand-accent">-Q</span><small>NEWTON ASTRO LABS</small></span>
+      </a>
+      <div class="topbar-center"><span class="topbar-dot"></span> Quantum verification workbench <span class="topbar-version">/ v0.5</span></div>
+      <div class="topbar-right"><span class="environment-pill"><span class="live-dot"></span> LOCAL ENGINE</span><a class="topbar-link" href="https://github.com/tonynewton79-web/PHYSQED-Q" target="_blank" rel="noopener noreferrer">Source on GitHub ↗</a></div>
+    </header>
+
+    <div class="content-wrap">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> PROOF-CARRYING QUANTUM COMPUTATION</div>
+          <h1 id="page-title">Design the circuit.<br><span>Prove the result.</span></h1>
+          <p>Create quantum circuits visually, apply exact optimizations, and independently verify that every transformation preserves the full operator. All computation runs in your local Python engine.</p>
+          <div class="hero-tags"><span>EXACT ALGEBRA</span><span>REPLAYABLE RECEIPTS</span><span>OPTIONAL LEAN 4.24</span></div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div>
+          <div class="hero-core">Q<span>√2</span></div>
+          <span class="orbital-label top">|ψ⟩</span><span class="orbital-label bottom">U†U = I</span>
+        </div>
+      </section>
+
+      <main class="workspace">
+        <section class="panel editor-panel" aria-labelledby="editor-title">
+          <div class="panel-heading"><div><div class="section-kicker">01 / COMPOSE</div><h2 id="editor-title">Circuit editor</h2></div><span class="panel-chip">4-QUBIT ENGINE</span></div>
+
+          <div class="presets"><span class="field-label">START WITH</span><div class="preset-actions"><button type="button" data-preset="optimize" class="preset-btn active">Optimization demo</button><button type="button" data-preset="bell" class="preset-btn">Bell state</button><button type="button" data-preset="ghz" class="preset-btn">GHZ state</button></div></div>
+
+          <div class="editor-fields">
+            <label class="input-group"><span class="field-label">CIRCUIT NAME</span><input id="circuit-name" maxlength="120" spellcheck="false" autocomplete="off" value="Seven-gate identity"></label>
+            <label class="input-group compact"><span class="field-label">QUBITS</span><select id="qubit-count" aria-label="Number of qubits"><option value="1">1 qubit</option><option value="2" selected>2 qubits</option><option value="3">3 qubits</option><option value="4">4 qubits</option></select></label>
+          </div>
+
+          <div class="section-divider"><span>GATE LIBRARY</span><span class="tiny-meta">10 gate families</span></div>
+          <div id="gate-palette" class="gate-palette" role="group" aria-label="Choose a quantum gate"></div>
+
+          <div class="add-row">
+            <label class="input-group compact"><span class="field-label">TARGET / CONTROL</span><select id="gate-qubit-a" aria-label="First qubit index"></select></label>
+            <label class="input-group compact" id="second-qubit-field"><span class="field-label">SECOND QUBIT</span><select id="gate-qubit-b" aria-label="Second qubit index"></select></label>
+            <button type="button" class="btn btn-secondary btn-add" id="add-gate"><span aria-hidden="true">＋</span> Add gate</button>
+          </div>
+
+          <div class="section-divider circuit-title"><span>INPUT CIRCUIT</span><span class="tiny-meta" id="sequence-count">0 operations</span></div>
+          <div class="circuit-scroller" id="source-board" aria-label="Circuit diagram" tabindex="0"></div>
+
+          <div class="sequence-heading"><span class="field-label">GATE SEQUENCE</span><span class="hint">Select or reorder operations</span></div>
+          <ol id="gate-sequence" class="gate-sequence" aria-label="Ordered circuit gates"></ol>
+
+          <div class="editor-bottom"><button class="text-button" type="button" id="reset-circuit">Clear circuit</button><div class="file-actions"><button type="button" id="import-button" class="text-button">↑ Import JSON</button><input id="import-circuit" type="file" accept=".json,application/json" aria-label="Choose circuit JSON file"><button type="button" class="text-button" id="export-circuit">↓ Export JSON</button></div></div>
+        </section>
+
+        <aside class="panel verify-panel" aria-labelledby="verify-title">
+          <div class="panel-heading"><div><div class="section-kicker">02 / CERTIFY</div><h2 id="verify-title">Proof dashboard</h2></div><span class="panel-chip blue">EXACT VERIFIER</span></div>
+
+          <div class="verification-card" id="verification-card" role="status" aria-live="polite">
+            <div class="status-mark" id="status-mark">○</div><div><div class="status-caption">CERTIFICATE STATUS</div><h3 id="status-title">Awaiting verification</h3><p id="status-detail">Compile a circuit to obtain independent exact-operator evidence.</p></div>
+          </div>
+
+          <button type="button" id="run-button" class="btn btn-primary"><span class="button-glyph">▶</span><span>Optimize &amp; Verify</span><span class="button-end">→</span></button>
+          <p class="button-footnote">Python computes exact matrices and replays every rewrite.</p>
+
+          <div class="section-divider"><span>OPTIMIZATION IMPACT</span><span class="tiny-meta" id="metrics-label">PENDING</span></div>
+          <div class="metrics-grid">
+            <div class="metric"><span>BEFORE</span><strong id="metric-before">—</strong><small>total gates</small></div>
+            <div class="metric"><span>AFTER</span><strong id="metric-after">—</strong><small>total gates</small></div>
+            <div class="metric"><span>DEPTH</span><strong id="metric-depth">—</strong><small>before → after</small></div>
+            <div class="metric"><span>T GATES</span><strong id="metric-t">—</strong><small>before → after</small></div>
+          </div>
+          <div class="savings" id="gate-savings"><span>REDUCTION</span><strong id="reduction-value">—</strong></div>
+
+          <div class="section-divider"><span>OPTIMIZED CIRCUIT</span><span class="tiny-meta" id="optimized-label">NOT YET COMPUTED</span></div>
+          <div class="result-board" id="optimized-board"><div class="empty-result">The verified output diagram will appear here.</div></div>
+
+          <div class="section-divider"><span>PROOF EVIDENCE</span><span class="tiny-meta" id="rewrite-count">0 REWRITES</span></div>
+          <div class="digest-block"><span class="field-label">EXACT OPERATOR SHA-256</span><code id="operator-digest">Pending computation</code></div>
+          <ol class="rewrite-list" id="rewrite-list"><li class="trace-placeholder">No rewrite trace yet</li></ol>
+
+          <div class="verification-actions"><button type="button" class="btn btn-outline" id="recheck-button" disabled>↻ Replay receipt</button><button type="button" class="btn btn-outline" id="lean-button" disabled>◇ Lean attest</button></div>
+          <button type="button" class="btn btn-download" id="download-receipt" disabled>↓ Download complete receipt (.json)</button>
+          <div class="lean-note"><span class="note-symbol">i</span><span id="lean-status">Lean attestation is optional and restricted to two-qubit circuits with at most 16 gates in each word.</span></div>
+        </aside>
+      </main>
+
+      <section class="principles"><div class="principle"><span class="principle-icon">◇</span><div><strong>Exact by construction</strong><p>All amplitudes are rational combinations of √2 and i. No floating-point approximations.</p></div></div><div class="principle"><span class="principle-icon">⎘</span><div><strong>Replayable evidence</strong><p>Every rewrite is recorded and independently checked against complete operators.</p></div></div><div class="principle"><span class="principle-icon">⌘</span><div><strong>Local and transparent</strong><p>Runs on your own Python installation. No account, cloud engine, or hardware claims.</p></div></div></section>
+    </div>
+
+    <footer class="footer"><span>PHYSQED-Q <span class="footer-separator">/</span> Newton Astro Labs</span><span>Research prototype · 1–4 qubits · ≤64 gates · Not quantum hardware</span><span>Version 0.5</span></footer>
+  </div>
+  <div class="toast" id="toast" role="alert" aria-live="assertive" hidden></div>
+</body>
+</html>
