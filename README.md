@@ -47,4 +47,17 @@ The exact evaluator and rewrite patterns are in separate modules; the verifier e
 
 The CLI accepts data-only JSON. It refuses unexpected fields, noninteger indices, repeated qubits, unsupported gates, oversize inputs, and noncanonical receipts. Inputs never execute code. This module is a clean-room design, not a derivative of the separately reviewed UUIDNA QPU package (published under CC-BY-NC-ND-4.0).
 
-Author: Tony Newton — Newton Astro Labs. Public research prototype; no external hardware or Lean proof is claimed. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
+Author: Tony Newton — Newton Astro Labs. Public research prototype; no external hardware or Lean proof is claimed for any per-circuit receipt. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
+
+## v0.2 research branch: checked gate catalogue and external baseline
+
+The supplementary [Lean proof catalogue](formal/README.md) has a pinned
+Lean 4.24.0 compiler check for specific single-qubit identities and
+two-bit involutions. This does **not** make Python receipts Lean-verified;
+`lean_kernel_verified` remains `false` in each receipt.
+
+An [optional pinned Qiskit 2.6.1 comparison](benchmarks/README.md)
+records reproducible ideal gate/depth metrics, fixed transpiler settings,
+and exactly which external outputs can be compared under PHYSQED-Q's strict
+operator convention. The current selected examples show parity with Qiskit
+optimization level 3, **not** a superiority result.

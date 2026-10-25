@@ -1,0 +1,31 @@
+name: Lean gate identities
+
+on:
+  push:
+    branches: ["main", "feature/lean-*"]
+    paths:
+      - "formal/**"
+      - "lean-toolchain"
+      - ".github/workflows/lean-gates.yml"
+  pull_request:
+    paths:
+      - "formal/**"
+      - "lean-toolchain"
+      - ".github/workflows/lean-gates.yml"
+
+jobs:
+  exact-gate-proofs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+      - name: Compile closed algebraic identities in Lean's kernel
+        run: lean formal/GateIdentities.lean
+      - name: Reject unproved placeholders and custom axioms
+        run: |
+          if grep -nE '(^|[^[:alnum:]_])(sorry|admit|native_decide|axiom)([^[:alnum:]_]|$)' formal/GateIdentities.lean; then
+            echo 'Unsafe proof construct found.'
+            exit 1
+          fi

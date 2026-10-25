@@ -1,0 +1,2 @@
+# Reproduce the comparison tested on 25 October 2026 (Python 3.12).
+qiskit==2.6.1

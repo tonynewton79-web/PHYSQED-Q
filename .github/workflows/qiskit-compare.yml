@@ -1,0 +1,33 @@
+name: Optional Qiskit comparison
+
+on:
+  push:
+    branches: ["main", "feature/lean-*"]
+    paths:
+      - "physqed_q/**"
+      - "benchmarks/**"
+      - "tests/test_benchmark.py"
+      - "examples/**"
+      - ".github/workflows/qiskit-compare.yml"
+  pull_request:
+    paths:
+      - "physqed_q/**"
+      - "benchmarks/**"
+      - "tests/test_benchmark.py"
+      - "examples/**"
+      - ".github/workflows/qiskit-compare.yml"
+
+jobs:
+  qiskit-2-6-1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned optional comparison dependency
+        run: python -m pip install -r benchmarks/requirements-qiskit.txt
+      - name: Run full test suite including real Qiskit cases
+        run: python -m unittest discover -s tests -v
+      - name: Exercise fixed-baseline comparison CLI
+        run: python -m benchmarks.qiskit_compare examples/optimize.json --level 3 --seed 2026
