@@ -1,6 +1,9 @@
-# PHYSQED-Q v0.1 — exact, replayable quantum-circuit compiler
+# PHYSQED-Q v0.4 — exact quantum compiler with Lean-checked receipt witnesses
 
 [![Exact compiler CI](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml)
+[![Lean gate identities](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml)
+[![Lean receipt witnesses](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml)
+[![Optional Qiskit comparison](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml)
 
 **Canonical project repository:** [tonynewton79-web/PHYSQED-Q](https://github.com/tonynewton79-web/PHYSQED-Q). Source code, reproducible examples, independent tests, and verification workflow are maintained here.
 
@@ -39,12 +42,59 @@ The verifier replays `HZH_to_X`, `CNOT_inverse`, `TT_to_S`, recomputes the compl
 - State evolution is unitary and deterministic; equality is of **complete operators**, not merely one prepared state and not up to global phase.
 - A SHA-256 receipt fingerprint detects ordinary modification but is not an authenticity signature; the verifier treats every input as untrusted regardless of digest.
 - The gate-depth metric uses greedy earliest scheduling on disjoint qubits; it is not hardware-aware timing.
-- No Lean kernel is invoked; `lean_kernel_verified=false`. No physical hardware is used; `hardware_verified=false` and `quantum_advantage_demonstrated=false`.
+- The base `compile` and `verify` commands do not invoke Lean; `lean_kernel_verified=false` remains correct for their receipts. The separate optional v0.3 bridge invokes Lean on a bounded generated theorem. No physical hardware is used; `hardware_verified=false` and `quantum_advantage_demonstrated=false`.
 
-The exact evaluator and rewrite patterns are in separate modules; the verifier explicitly checks the semantics of each transformation rather than trusting only pattern names or hashes. The tests include independent expected finite-state amplitudes and adversarial alteration checks. A broader independently implemented physics semantics reference, formal Lean gate-semantics proof, noise model, connectivity-aware compiler and Qiskit/Cirq resource comparisons remain future development.
+The exact evaluator and rewrite patterns are in separate modules; the verifier explicitly checks the semantics of each transformation rather than trusting only pattern names or hashes. The tests include independent expected finite-state amplitudes and adversarial alteration checks. End-to-end formalisation of the Python compiler, larger circuit semantics, noise models, connectivity-aware compilation, and held-out external comparisons remain future development.
 
 ## Security and provenance
 
 The CLI accepts data-only JSON. It refuses unexpected fields, noninteger indices, repeated qubits, unsupported gates, oversize inputs, and noncanonical receipts. Inputs never execute code. This module is a clean-room design, not a derivative of the separately reviewed UUIDNA QPU package (published under CC-BY-NC-ND-4.0).
 
-Author: Tony Newton — Newton Astro Labs. Public research prototype; no external hardware or Lean proof is claimed. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
+Author: Tony Newton — Newton Astro Labs. Public research prototype; ordinary Python receipts make no Lean-kernel claim, while the optional bounded bridge emits a separately scoped theorem attestation. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
+
+## v0.2 capability: checked gate catalogue and external baseline
+
+The supplementary [Lean proof catalogue](formal/README.md) has a pinned
+Lean 4.24.0 compiler check for specific single-qubit identities and
+two-bit involutions. This does **not** make Python receipts Lean-verified;
+`lean_kernel_verified` remains `false` in each receipt.
+
+An [optional pinned Qiskit 2.6.1 comparison](benchmarks/README.md)
+records reproducible ideal gate/depth metrics, fixed transpiler settings,
+and exactly which external outputs can be compared under PHYSQED-Q's strict
+operator convention. The current selected examples show parity with Qiskit
+optimization level 3, **not** a superiority result.
+
+## v0.3 capability: a Lean theorem for an actual receipt
+
+For a bounded **two-qubit circuit with at most 16 input gates**, the new
+bridge generates Lean source explicitly naming the receipt's input and
+optimized gate sequences, then compiles a complete four-column operator
+equality with the pinned Lean 4.24.0 kernel:
+
+```bash
+python3 -m physqed_q compile examples/optimize.json --output /tmp/physqed_receipt.json
+python3 -m physqed_q.lean_certificate /tmp/physqed_receipt.json \
+  --lean lean --emit-lean /tmp/physqed_receipt.lean \
+  --output /tmp/physqed_attestation.json
+```
+
+The second command fails if the theorem fails or Lean is missing, and creates
+a separate attestation only after successful compilation. [Formal scope and
+remaining trust boundary](formal/README.md). This does not constitute a Lean
+proof of the Python compiler, nor a signed certificate.
+
+## v0.4 capability: gate decoding moved into Lean
+
+The certificate now renders the original receipt's **gate names and ordered
+qubit indices as literal data**, e.g. `("CNOT", [1, 0])`, instead of selecting
+Lean gate constructors in Python. The new `formal/RawGateBridge.lean` defines
+the entire two-qubit name/arity/index map in Lean. An unknown name, invalid
+arity, or invalid index fails decoding and makes the theorem false. Successful
+attestations have schema `physqed-q-lean-theorem-attestation-v2`, contain the
+decoder file hash, and set `lean_gate_decoder_checked=true` after real Lean
+compilation. They still say `python_compiler_end_to_end_formalized=false`.
+
+The verified scope remains **two qubits, at most 16 gates in each receipt
+word, exact full-operator equality**; the original Python receipt is unchanged.
+This is an independently checkable extension, not a quantum-advantage claim.

@@ -1,0 +1,51 @@
+name: Lean circuit-specific receipts
+
+on:
+  push:
+    branches: ["main", "feature/receipt-*", "feature/lean-native-*"]
+    paths:
+      - "formal/**"
+      - "physqed_q/lean_certificate.py"
+      - "physqed_q/compiler.py"
+      - "physqed_q/kernel.py"
+      - "tests/test_lean_certificate.py"
+      - "lean-toolchain"
+      - ".github/workflows/lean-receipts.yml"
+  pull_request:
+    paths:
+      - "formal/**"
+      - "physqed_q/lean_certificate.py"
+      - "physqed_q/compiler.py"
+      - "physqed_q/kernel.py"
+      - "tests/test_lean_certificate.py"
+      - "lean-toolchain"
+      - ".github/workflows/lean-receipts.yml"
+
+jobs:
+  compile-generated-theorems:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned Lean 4.24.0 (standalone modules)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSfL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --no-modify-path --default-toolchain leanprover/lean4:v4.24.0
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Verify Lean version
+        run: lean --version
+      - name: Kernel-check source modules and fixed witnesses
+        run: |
+          mkdir -p /tmp/physqed_q_ci_lean
+          lean -o /tmp/physqed_q_ci_lean/GateIdentities.olean formal/GateIdentities.lean
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean -o /tmp/physqed_q_ci_lean/TwoQubitSemantics.olean formal/TwoQubitSemantics.lean
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean formal/ReceiptWitness.lean
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean -o /tmp/physqed_q_ci_lean/RawGateBridge.olean formal/RawGateBridge.lean
+          LEAN_PATH=/tmp/physqed_q_ci_lean lean formal/RawGateWitness.lean
+      - name: Test genuine receipt-to-Lean bridge and invalid receipt negatives
+        run: |
+          export PHYSQED_Q_LEAN_BIN="$(command -v lean)"
+          python -m unittest discover -s tests -p test_lean_certificate.py -v
+      - name: Run standard Python regressions
+        run: python -m unittest discover -s tests -v
