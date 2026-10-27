@@ -1,6 +1,9 @@
-# PHYSQED-Q v0.1 — exact, replayable quantum-circuit compiler
+# PHYSQED-Q v0.4 — exact quantum compiler with Lean-checked receipt witnesses
 
 [![Exact compiler CI](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml)
+[![Lean gate identities](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml)
+[![Lean receipt witnesses](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml)
+[![Optional Qiskit comparison](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml)
 
 **Canonical project repository:** [tonynewton79-web/PHYSQED-Q](https://github.com/tonynewton79-web/PHYSQED-Q). Source code, reproducible examples, independent tests, and verification workflow are maintained here.
 
@@ -49,7 +52,7 @@ The CLI accepts data-only JSON. It refuses unexpected fields, noninteger indices
 
 Author: Tony Newton — Newton Astro Labs. Public research prototype; ordinary Python receipts make no Lean-kernel claim, while the optional bounded bridge emits a separately scoped theorem attestation. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
 
-## v0.2 research branch: checked gate catalogue and external baseline
+## v0.2 capability: checked gate catalogue and external baseline
 
 The supplementary [Lean proof catalogue](formal/README.md) has a pinned
 Lean 4.24.0 compiler check for specific single-qubit identities and
@@ -62,7 +65,7 @@ and exactly which external outputs can be compared under PHYSQED-Q's strict
 operator convention. The current selected examples show parity with Qiskit
 optimization level 3, **not** a superiority result.
 
-## v0.3 research branch: a Lean theorem for an actual receipt
+## v0.3 capability: a Lean theorem for an actual receipt
 
 For a bounded **two-qubit circuit with at most 16 input gates**, the new
 bridge generates Lean source explicitly naming the receipt's input and
@@ -81,7 +84,7 @@ a separate attestation only after successful compilation. [Formal scope and
 remaining trust boundary](formal/README.md). This does not constitute a Lean
 proof of the Python compiler, nor a signed certificate.
 
-## v0.4 research branch: gate decoding moved into Lean
+## v0.4 capability: gate decoding moved into Lean
 
 The certificate now renders the original receipt's **gate names and ordered
 qubit indices as literal data**, e.g. `("CNOT", [1, 0])`, instead of selecting
