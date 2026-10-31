@@ -5,6 +5,29 @@
 [![Lean receipt witnesses](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml)
 [![Optional Qiskit comparison](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml)
 
+## Coherent graph-adjacency oracle and exact query counting (research addition)
+
+The default branch now contains the bounded coherent oracle
+`O_A |u,v,b> = |u,v,b XOR A_uv>`, supporting 2–8 vertices, up to
+12 qubits in the separate query-specific module, exact query ledgers,
+independent dense/sparse replay and receipt tamper refusals.
+A specified-triple compute–CCZ–uncompute construction uses **six** counted
+queries; this does *not* search for a triangle in an arbitrary unknown graph.
+The earlier exact 17-gate CCZ benchmark is also included.
+
+Run the new tests and replay example from the repository root:
+
+```bash
+python -m unittest tests.test_adjacency_oracle tests.test_triangle_phase_scope -v
+python -m physqed_q.oracle_cli demo --vertices 3 --output triangle_oracle_receipt.json
+python -m physqed_q.oracle_cli verify triangle_oracle_receipt.json
+```
+
+[Complete query-model specification](docs/adjacency_oracle.md) ·
+[PHYSQED classical exact triangle benchmark](https://github.com/tonynewton79-web/PHYSQED-v1.1/blob/main/projects/physqed/tests/test_triangle_query_scope.py).
+The new query backend is research-stage; hosted CI checks on the integrated
+main commit must be checked separately before claiming them green.
+
 **Canonical project repository:** [tonynewton79-web/PHYSQED-Q](https://github.com/tonynewton79-web/PHYSQED-Q). Source code, reproducible examples, independent tests, and verification workflow are maintained here.
 
 An independent module of Tony Newton's PHYSQED programme, implemented as a **bounded, exact quantum software prototype**. It transforms gate sequences using a small specified rule catalogue, recomputes complete operators in Q(√2,i), and emits self-contained evidence that a separate invocation can replay. This is not a quantum processing unit or a claim of quantum speedup.
