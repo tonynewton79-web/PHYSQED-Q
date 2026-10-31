@@ -1,0 +1,81 @@
+{
+  "program": {
+    "schema": "physqed-q-adjacency-program-v1",
+    "name": "six-query-fixed-triple-phase",
+    "vertices": 3,
+    "vertex_registers": [
+      "u",
+      "v",
+      "w"
+    ],
+    "answer_registers": [
+      "e_uv",
+      "e_vw",
+      "e_wu"
+    ],
+    "operations": [
+      {
+        "op": "QUERY",
+        "left": "u",
+        "right": "v",
+        "answer": "e_uv"
+      },
+      {
+        "op": "QUERY",
+        "left": "v",
+        "right": "w",
+        "answer": "e_vw"
+      },
+      {
+        "op": "QUERY",
+        "left": "w",
+        "right": "u",
+        "answer": "e_wu"
+      },
+      {
+        "op": "CCZ",
+        "bits": [
+          6,
+          7,
+          8
+        ]
+      },
+      {
+        "op": "QUERY",
+        "left": "w",
+        "right": "u",
+        "answer": "e_wu"
+      },
+      {
+        "op": "QUERY",
+        "left": "v",
+        "right": "w",
+        "answer": "e_vw"
+      },
+      {
+        "op": "QUERY",
+        "left": "u",
+        "right": "v",
+        "answer": "e_uv"
+      }
+    ]
+  },
+  "graph": {
+    "vertices": 3,
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ]
+  },
+  "initial": 36
+}
