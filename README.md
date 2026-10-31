@@ -1,12 +1,15 @@
-# PHYSQED-Q — exact quantum-circuit compiler and verification workbench
+# PHYSQED-Q v0.6B — exact quantum-circuit compiler and verification workbench
 
 [![Exact compiler CI](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml)
+[![Lean gate identities](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml)
+[![Lean receipt witnesses](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml)
+[![Optional Qiskit comparison](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml)
 
 **Canonical project repository:** [tonynewton79-web/PHYSQED-Q](https://github.com/tonynewton79-web/PHYSQED-Q). Source code, reproducible examples, independent tests, and verification workflow are maintained here.
 
 An independent module of Tony Newton's PHYSQED programme, implemented as a **bounded, exact quantum software prototype**. It transforms gate sequences using a small specified rule catalogue, recomputes complete operators in Q(√2,i), and emits self-contained evidence that a separate invocation can replay. This is not a quantum processing unit or a claim of quantum speedup.
 
-## Bounded exact one-qubit optimality (development branch)
+## Bounded exact one-qubit optimality (v0.6B research capability)
 
 The separate `synthesize` command exhaustively searches the ordered alphabet
 `(H, X, Z, S, SDG, T, TDG)` through a declared integer horizon `0 <= h <= 5`
