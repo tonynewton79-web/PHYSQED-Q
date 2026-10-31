@@ -1,0 +1,9 @@
+{
+  "name": "Disjoint inverse witness",
+  "qubits": 2,
+  "gates": [
+    {"gate": "H", "qubits": [0]},
+    {"gate": "X", "qubits": [1]},
+    {"gate": "H", "qubits": [0]}
+  ]
+}

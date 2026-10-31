@@ -1,4 +1,4 @@
-# PHYSQED-Q v0.4 — exact quantum compiler with Lean-checked receipt witnesses
+# PHYSQED-Q v0.6B — exact quantum-circuit compiler and verification workbench
 
 [![Exact compiler CI](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/physqed-q.yml)
 [![Lean gate identities](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-gates.yml)
@@ -8,6 +8,117 @@
 **Canonical project repository:** [tonynewton79-web/PHYSQED-Q](https://github.com/tonynewton79-web/PHYSQED-Q). Source code, reproducible examples, independent tests, and verification workflow are maintained here.
 
 An independent module of Tony Newton's PHYSQED programme, implemented as a **bounded, exact quantum software prototype**. It transforms gate sequences using a small specified rule catalogue, recomputes complete operators in Q(√2,i), and emits self-contained evidence that a separate invocation can replay. This is not a quantum processing unit or a claim of quantum speedup.
+
+## Bounded exact one-qubit optimality (v0.6B research capability)
+
+The separate `synthesize` command exhaustively searches the ordered alphabet
+`(H, X, Z, S, SDG, T, TDG)` through a declared integer horizon `0 <= h <= 5`
+(default 5), including the empty word. Input is exactly one qubit with at most
+64 gates from this alphabet. A successful receipt certifies the following:
+among all words of length at most `h` with the same **full exact operator**
+in Q(√2,i), the winner minimizes, lexicographically,
+`(total gate count, T count, alphabet-order word)`. T and TDG each cost one
+T gate; the last tie-break follows the declared alphabet, not Unicode order.
+On one qubit, gate count also equals circuit depth.
+
+```bash
+python3 -m physqed_q synthesize examples/optimality.json --horizon 5 --output /tmp/physqed-q-optimality.json
+python3 -m physqed_q verify-optimality /tmp/physqed-q-optimality.json
+python3 -m unittest tests.test_optimality tests.test_cli -v
+```
+
+This deterministic witness transforms `H X H` into the one-gate word `Z`.
+Both generation and independent replay account for every word:
+`N(h) = sum(7**k for k in range(h+1))`, or **19,608 cases at horizon 5**,
+even when a zero-gate identity wins. The verifier reruns its own exhaustive
+enumeration, relative to the shared exact arithmetic and gate-semantics kernel;
+it does not trust the declared winner, count, costs or digest as proof.
+If no exact representative exists within the horizon, synthesis rejects with
+exit code 2 and emits no certificate or success JSON. Invalid inputs and
+tampered receipts likewise reject. Without `--output`, synthesis prints the
+receipt directly; with it, the CLI prints the path, digest and equivalence flag.
+
+This is a bounded alphabet-relative minimum, **not a global compiler** or a
+claim about alternative gate libraries, ancillas, two-qubit circuits,
+approximation, gate latencies or physical hardware. Global phase is exact,
+not ignored. The distinct `physqed-q-bounded-optimality-v1` schema explicitly
+keeps Lean, hardware and quantum-advantage flags false; the digest detects
+corruption, not authenticity. It is not Lean certification of the search or
+kernel. Ordinary `compile`/`verify`, legacy receipts, the loopback HTTP API and
+public UI are unchanged. No additional runtime dependencies are required.
+
+## v0.6A: opt-in certified disjoint commutation (development branch)
+
+The default `adjacent` policy and v1 receipt format are unchanged. Select
+`commuting` explicitly to emit a v2 receipt: after adjacent reductions, it
+can move a gate across gates on disjoint qubits to expose an existing
+two-gate reduction. It does not commute overlapping gates or search for a
+globally optimal circuit. The workbench has the same opt-in optimizer selector.
+To try the witness visually, import `examples/commuting.json` into the editor
+and select the commuting strategy before choosing **Optimize & Verify**.
+
+```bash
+python3 -m physqed_q compile examples/commuting.json --optimizer commuting --output /tmp/physqed-q-commuting.json
+python3 -m physqed_q verify /tmp/physqed-q-commuting.json
+python3 -m benchmarks.commuting_suite
+```
+
+For this fixture, `H(0), X(1), H(0)` becomes `X(1)`: the adjacent policy
+leaves 3 gates at depth 2, while the commuting policy gives 1 gate at depth 1.
+Both have T count 0. The verifier independently replays every recorded swap
+and reduction, checks the full exact operator after every step and at the
+endpoint, and recomputes the metrics. `verify` supports both receipt versions.
+The public SHA-256 digest is integrity evidence, not an authenticity signature.
+
+The deterministic [internal benchmark](benchmarks/README.md) also includes
+an adjacent-reduction parity case and a blocked overlapping-gate case. These
+three selected examples measure only the two internal policies, not general
+compiler optimality, hardware fidelity, or an external optimizer comparison.
+Runtime remains Python-standard-library-only with the same 0–4 qubit,
+64-input-gate bound. Python replay does not invoke Lean or verify hardware;
+the receipt flags `lean_kernel_verified` and `hardware_verified` remain false.
+
+## v0.5 visual Python workbench
+
+PHYSQED-Q now has a local graphical interface driven by the actual Python
+compiler and replay verifier. It needs only Python 3.11+ and a modern browser:
+
+```bash
+python3 -m physqed_q.web --port 8765
+```
+
+Open **http://127.0.0.1:8765/** in your browser (or supply `--open` to ask
+Python to launch your default browser). On Windows, `py -m physqed_q.web`
+also works with a suitable Python installation.
+
+The workbench provides:
+
+- A visual 1–4 qubit editor with all ten supported gate types, including
+  explicitly ordered CNOT controls and targets, gate reordering and removal.
+- Bell, GHZ and seven-to-two gate examples; import and export of source JSON.
+- An **Optimize & Verify** button that runs the real Python compiler and then
+  independently replays the complete exact-operator certificate.
+- Before/after gate count, circuit depth, T count, rule trace, the optimized
+  circuit diagram, operator SHA-256 digest and JSON receipt download.
+- An optional **Lean attest** button for supported two-qubit receipts when
+  Lean 4.24.0 is installed. Use `--lean /path/to/lean` if not on PATH.
+
+It binds to IPv4 loopback `127.0.0.1` only, rejects cross-origin writes and
+untrusted Host headers, and does not upload your circuits to a service. The
+visual interface adds no mathematical assumptions: successful replay is still
+the exact bounded Python check; Lean remains a separate, explicitly limited
+attestation. Neither proves real quantum-hardware behavior.
+
+To check the new HTTP API and JavaScript state behavior:
+
+```bash
+python3 -m unittest tests.test_web -v
+node --check physqed_q/web_assets/app.js
+node tests/test_web_ui.mjs
+```
+
+Node is used only to run JavaScript developer tests; the workbench itself has
+no Node/npm or third-party Python runtime dependency.
 
 ## Run (no installation or third-party packages)
 
@@ -52,7 +163,7 @@ The CLI accepts data-only JSON. It refuses unexpected fields, noninteger indices
 
 Author: Tony Newton — Newton Astro Labs. Public research prototype; ordinary Python receipts make no Lean-kernel claim, while the optional bounded bridge emits a separately scoped theorem attestation. See [DESIGN.md](DESIGN.md) for scope and acceptance criteria.
 
-## v0.2 capability: checked gate catalogue and external baseline
+## v0.2 research branch: checked gate catalogue and external baseline
 
 The supplementary [Lean proof catalogue](formal/README.md) has a pinned
 Lean 4.24.0 compiler check for specific single-qubit identities and
@@ -65,7 +176,7 @@ and exactly which external outputs can be compared under PHYSQED-Q's strict
 operator convention. The current selected examples show parity with Qiskit
 optimization level 3, **not** a superiority result.
 
-## v0.3 capability: a Lean theorem for an actual receipt
+## v0.3 research branch: a Lean theorem for an actual receipt
 
 For a bounded **two-qubit circuit with at most 16 input gates**, the new
 bridge generates Lean source explicitly naming the receipt's input and
@@ -84,7 +195,7 @@ a separate attestation only after successful compilation. [Formal scope and
 remaining trust boundary](formal/README.md). This does not constitute a Lean
 proof of the Python compiler, nor a signed certificate.
 
-## v0.4 capability: gate decoding moved into Lean
+## v0.4 research branch: gate decoding moved into Lean
 
 The certificate now renders the original receipt's **gate names and ordered
 qubit indices as literal data**, e.g. `("CNOT", [1, 0])`, instead of selecting
