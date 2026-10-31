@@ -1,0 +1,38 @@
+name: PHYSQED-Q coherent adjacency oracle
+on:
+  push:
+    paths:
+      - "physqed_q/adjacency_oracle.py"
+      - "physqed_q/oracle_cli.py"
+      - "tests/test_adjacency_oracle.py"
+      - "examples/adjacency_triangle_n3.json"
+      - ".github/workflows/adjacency-oracle.yml"
+  pull_request:
+    paths:
+      - "physqed_q/adjacency_oracle.py"
+      - "physqed_q/oracle_cli.py"
+      - "tests/test_adjacency_oracle.py"
+      - "examples/adjacency_triangle_n3.json"
+      - ".github/workflows/adjacency-oracle.yml"
+permissions:
+  contents: read
+jobs:
+  exact-adjacency-oracle:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Exact oracle unit tests
+        run: python -m unittest tests.test_adjacency_oracle -v
+      - name: Deterministic certificate and replay
+        run: |
+          python -m physqed_q.oracle_cli demo --vertices 3 --output /tmp/triangle.json
+          python -m physqed_q.oracle_cli verify /tmp/triangle.json
+          python -m physqed_q.oracle_cli certify examples/adjacency_triangle_n3.json --output /tmp/instance.json
+          python -m physqed_q.oracle_cli verify /tmp/instance.json
+          python -m physqed_q.oracle_cli family --vertices 4
