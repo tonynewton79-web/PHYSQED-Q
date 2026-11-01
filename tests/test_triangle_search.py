@@ -118,7 +118,9 @@ class ExactCoherentTriangleSearch(unittest.TestCase):
         with self.assertRaises(OracleError):
             certify_search(config(3,[],True))
         with self.assertRaises(OracleError):
-            certify_search(config(3,[(1,2),(0,1)],1))
+            bad=config(3,[(1,2),(0,1)],1)
+            bad["graph"]["edges"]=[[1,2],[0,1]]
+            certify_search(bad)
 
     def test_program_receipt_schema_is_frozen(self):
         r=certify_search(config(3,[],0))
