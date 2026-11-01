@@ -52,7 +52,8 @@ with six charged oracle calls. On `K4`, there are four triangles
 These fractions and exact failure probabilities are unit-tested.
 
 A successful receipt stores the full per-invocation query ledger, counts,
-per-iteration probabilities, the exact total measurement probabilities,
+per-iteration probabilities, the complete **per-ordered-triple measurement
+probability distribution**, and the exact total success/failure probabilities,
 the two-amplitude result and SHA-256 integrity. `verify_search` does not
 trust the checksum; it recomputes the full finite state and all fields.
 Falsified probabilities, counts, ledgers and even recomputed forged digests
