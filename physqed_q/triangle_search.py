@@ -174,6 +174,10 @@ def certify_search(config):
         "marked_amplitude_numerator":_fraction(marked_amplitude),
         "unmarked_amplitude_numerator":_fraction(unmarked_amplitude),
         "probability_denominator":N,
+        "final_measurement_distribution":[
+            {"triple":list(triples[k]),"probability":_fraction(a*a/N)}
+            for k,a in enumerate(numerators)
+        ],
         "iterations":step_summaries,
         "scope":dict(SCOPE),
     }
@@ -189,7 +193,8 @@ def verify_search(receipt):
         "ideal_diffuser_calls","abstract_uniform_preparations",
         "abstract_measurements","search_success_probability",
         "search_failure_probability","marked_amplitude_numerator",
-        "unmarked_amplitude_numerator","probability_denominator","iterations",
+        "unmarked_amplitude_numerator","probability_denominator",
+        "final_measurement_distribution","iterations",
         "scope","receipt_sha256"
     } or receipt["schema"] != SCHEMA:
         raise OracleError("invalid search receipt schema")
