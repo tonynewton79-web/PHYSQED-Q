@@ -8,6 +8,32 @@
 [![Lean receipt witnesses](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml)
 [![Optional Qiskit comparison](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml)
 
+## Exact coherent triangle search, measurement probabilities and query accounting
+
+The new query-model research module performs an exact finite Grover-style
+search over all n³ ordered vertex triples (3 ≤ n ≤ 8), including repeated
+vertices, using an **ideal graph-independent diffuser**. The underlying
+marked-triple phase makes six charged coherent adjacency queries per
+iteration. Post-measurement candidate checking, when selected, costs
+another three queries. It computes **exact rational success/failure
+probabilities** and checks the amplitudes independently through the
+two-dimensional marked/unmarked Grover recurrence, with tamper-refusing
+replayable JSON receipts.
+
+The ideal diffuser and uniform state preparation are **not yet translated
+to the existing gate-compiler alphabet**. These are conditional, bounded
+query-model calculations, not a practical quantum algorithm or an
+O(n)-query result for triangle finding.
+
+```bash
+python -m unittest tests.test_triangle_search -v
+python -m physqed_q.search_cli demo --vertices 3 --iterations 1 --verify-candidate --output triangle_search_receipt.json
+python -m physqed_q.search_cli verify triangle_search_receipt.json
+python -m physqed_q.search_cli family --vertices 4 --iterations 1
+```
+
+[Mathematical details and trust boundary](docs/triangle_search.md).
+
 ## Coherent graph-adjacency oracle and exact query counting (research addition)
 
 The default branch now contains the bounded coherent oracle
