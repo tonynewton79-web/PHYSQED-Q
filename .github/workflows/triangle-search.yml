@@ -1,0 +1,38 @@
+name: PHYSQED-Q exact coherent triangle search and query ledger
+on:
+  push:
+    paths:
+      - "physqed_q/triangle_search.py"
+      - "physqed_q/search_cli.py"
+      - "tests/test_triangle_search.py"
+      - "physqed_q/adjacency_oracle.py"
+      - ".github/workflows/triangle-search.yml"
+  pull_request:
+    paths:
+      - "physqed_q/triangle_search.py"
+      - "physqed_q/search_cli.py"
+      - "tests/test_triangle_search.py"
+      - "physqed_q/adjacency_oracle.py"
+      - ".github/workflows/triangle-search.yml"
+permissions:
+  contents: read
+jobs:
+  exact-search:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11","3.12","3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Source syntax
+        run: python -m compileall -q physqed_q tests/test_triangle_search.py
+      - name: Exact search and existing adjacency query controls
+        run: python -m unittest tests.test_triangle_search tests.test_adjacency_oracle -v
+      - name: Fresh certificate generation and independent replay
+        run: |
+          python -m physqed_q.search_cli demo --vertices 3 --iterations 1 --verify-candidate --output /tmp/triangle-search.json
+          python -m physqed_q.search_cli verify /tmp/triangle-search.json
+          python -m physqed_q.search_cli family --vertices 4 --iterations 1
