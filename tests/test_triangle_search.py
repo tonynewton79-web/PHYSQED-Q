@@ -29,6 +29,14 @@ class ExactCoherentTriangleSearch(unittest.TestCase):
         self.assertEqual(receipt["coherent_oracle_queries"],6)
         self.assertEqual(receipt["candidate_verification_queries"],3)
         self.assertEqual(receipt["query_count"],9)
+        distribution=receipt["final_measurement_distribution"]
+        self.assertEqual(len(distribution),27)
+        self.assertEqual(sum((Fraction(x["probability"]) for x in distribution),
+                             Fraction(0)),1)
+        marked_outcomes=[x for x in distribution if set(x["triple"])=={0,1,2}]
+        self.assertEqual(len(marked_outcomes),6)
+        self.assertEqual(sum((Fraction(x["probability"]) for x in marked_outcomes),
+                             Fraction(0)),Fraction(722,729))
         self.assertEqual(len(receipt["query_ledger"]),9)
         self.assertTrue(verify_search(receipt)["verified"])
         self.assertFalse(receipt["scope"]["O_n_query_algorithm_proven"])
@@ -89,6 +97,15 @@ class ExactCoherentTriangleSearch(unittest.TestCase):
                                          if k!="receipt_sha256"})
         with self.assertRaises(OracleError):
             verify_search(broken)
+
+    def test_replay_rejects_forged_measurement_distribution(self):
+        r=certify_search(config(3,[(0,1),(0,2),(1,2)]))
+        wrong=deepcopy(r)
+        wrong["final_measurement_distribution"][0]["probability"]="0/1"
+        wrong["receipt_sha256"]=digest({k:v for k,v in wrong.items()
+                                         if k!="receipt_sha256"})
+        with self.assertRaises(OracleError):
+            verify_search(wrong)
 
     def test_replay_rejects_forged_count(self):
         r=certify_search(config(3,[(0,1),(0,2),(1,2)],2))
