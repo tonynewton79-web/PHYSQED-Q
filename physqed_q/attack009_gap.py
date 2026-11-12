@@ -98,3 +98,24 @@ def toy_hccz_interference_circuits():
           Gate("CCZ",(0,1,2)),Gate("H",(0,)))
     yes = no + (Gate("H",(0,)),Gate("CCZ",(0,3,4)),Gate("H",(0,)))
     return {"n_wires":5, "basis":(1<<3)|(1<<4), "no":no, "yes":yes}
+
+@dataclass(frozen=True)
+class PostselectionCertificate:
+    conditional_acceptance: Fraction
+    selection_probability: Fraction
+    expected_independent_trials: Fraction
+
+
+def postselection_rational_bypass(p: Fraction, delta: Fraction) -> PostselectionCertificate:
+    """Exact rational gap via exponentially rare postselection, NOT ordinary BQP.
+
+    Toss a fair coin. On branch A condition on event p and accept; on branch R
+    condition on independent event delta/2 and reject. The conditional
+    acceptance is p/(p+delta/2), an explicit rational (not polynomial) map.
+    """
+    if not isinstance(p, Fraction) or not 0 <= p <= 1:
+        raise ValueError("p must be an exact probability")
+    if not isinstance(delta, Fraction) or not 0 < delta <= 1:
+        raise ValueError("delta must be a positive exact probability")
+    selection=(p+delta/2)/2
+    return PostselectionCertificate(p/(p+delta/2), selection, 1/selection)
