@@ -73,5 +73,26 @@ class GapTests(unittest.TestCase):
                 required_grover_iterations_by_quadratic_bound(1,0,t)
 
 
+
+    def test_postselection_rational_falsifier(self):
+        from physqed_q.attack009_gap import postselection_rational_bypass
+        for n in range(1,16):
+            delta=Fraction(1,1<<(2*(2*n-1)))
+            no=postselection_rational_bypass(Fraction(0),delta)
+            yes=postselection_rational_bypass(delta,delta)
+            self.assertEqual(no.conditional_acceptance,0)
+            self.assertEqual(yes.conditional_acceptance,Fraction(2,3))
+            self.assertEqual(no.selection_probability,delta/4)
+            self.assertEqual(yes.selection_probability,3*delta/4)
+            self.assertEqual(no.expected_independent_trials,Fraction(4)/delta)
+            for count in (1,2,3,5):
+                p=count**2*delta
+                if p<=1:
+                    self.assertGreaterEqual(postselection_rational_bypass(p,delta).conditional_acceptance,Fraction(2,3))
+        with self.assertRaises(ValueError):
+            postselection_rational_bypass(Fraction(1,2),Fraction(0))
+        with self.assertRaises(ValueError):
+            postselection_rational_bypass(0.5,Fraction(1,4))
+
 if __name__=="__main__":
     unittest.main()
