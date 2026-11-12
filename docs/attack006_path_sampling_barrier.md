@@ -6,7 +6,7 @@
 
 ## 1. Explicit uniform H–CCZ promise family
 
-Let \(r\ge2\), \(m=2r\), \(n=4r\). Choose the explicit quadratic map \(Q:\mathbb F_2^r\to\mathbb F_2^r\) in \`physqed_q/dense_bent.py\), including \(Q_0(a)=\sum_{i<j}a_i a_j\). Put
+Let \(r\ge2\), \(m=2r\), \(n=4r\). Choose the explicit quadratic map \(Q:\mathbb F_2^r\to\mathbb F_2^r\) in `physqed_q/dense_bent.py\), including \(Q_0(a)=\sum_{i<j}a_i a_j\). Put
 
 \[
 \pi(a,b)=(a,b\oplus Q(a)), \quad \pi^2=\mathrm{id}.
@@ -85,15 +85,15 @@ Independent exact integer calculations show \(\mathrm{TV}_{190}\approx0.33326196
 
 ## 4. Reproducibility
 
-- \`physqed_q/path_sampling_gate.py\`: all-size analytic certificates, CCZ phase compiler, exact proposal moment, and exact sign-only chi-square.
-- \`tests/test_path_sampling_gate.py\`: 7/7 local test methods, including 256 distinct 8-bit masks, 31 additional 12-bit masks, six full H–CCZ output-state checks, importance-distribution controls and refusals.
-- \`tests/independent_attack006_audit.py\`: four complete 8-bit direct double sums, eight 12-bit independent Walsh checks, 33 exact chi-square/TV inequalities, binomial threshold certification and circuit-size checks.
+- `physqed_q/path_sampling_gate.py`: all-size analytic certificates, CCZ phase compiler, exact proposal moment, and exact sign-only chi-square.
+- `tests/test_path_sampling_gate.py`: 7/7 local test methods, including 256 distinct 8-bit masks, 31 additional 12-bit masks, six full H–CCZ output-state checks, importance-distribution controls and refusals.
+- `tests/independent_attack006_audit.py`: four complete 8-bit direct double sums, eight 12-bit independent Walsh checks, 33 exact chi-square/TV inequalities, binomial threshold certification and circuit-size checks.
 
 From repository root:
-\`\`\`bash
+```bash
 python -m unittest discover -s tests -p 'test_path_sampling_gate.py' -v
 python -m tests.independent_attack006_audit
-\`\`\`
+```
 
 **Locally checked:** 7/7 tests passed, 287 Walsh comparisons, 4 direct path sums, 6 exact final-state tests, and 33 total-variation/chi-square comparisons. This is local execution, not a claim that hosted CI has passed. The LaTeX proof manuscript and a full deterministic results/manifest package are supplied as a separate downloadable artifact.
 
