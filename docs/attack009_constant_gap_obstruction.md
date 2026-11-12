@@ -42,6 +42,25 @@ This threshold is **necessary, not sufficient**, since the Grover probability os
 
 All integer rounding is checked with exact integer square roots; no floating-point threshold estimates.
 
+## Adversarial counterexample: rational postprocessing and postselection
+
+The Markov theorem **cannot** be extended to all bounded rational maps. Let \(\delta=p_*\). The degree-one rational transformation
+
+\[
+R_\delta(p)=\frac{2p}{2p+\delta}
+\]
+
+obeys \(R_\delta(0)=0\), \(R_\delta(\delta)=2/3\), and \(0\le R_\delta(p)<1\) for every \(p\in[0,1]\).
+
+This is an *algebraic* transformation, not an efficient way to evaluate the unknown #SAT-dependent value \(p\). It can be implemented in a **postselection** model by tossing a fair branch coin: on branch A, postselect on the original success event with probability \(p\) and output YES; on branch B, postselect on an independent event of probability \(\delta/2\) (all zero among \(2(n+w)+1\) fair bits) and output NO. Then
+
+\[
+\Pr(\text{selected})=(p+\delta/2)/2,\quad
+\Pr(\text{YES}\mid\text{selected})=\frac{p}{p+\delta/2}=R_\delta(p).
+\]
+
+For unsatisfiable and uniquely satisfiable boundary cases, selection occurs with respective probabilities \(\delta/4\) and \(3\delta/4\); ordinary rejection sampling therefore takes exponentially many expected repetitions. Postselection is **not** a free BQP operation (established prior art: PostBQP=PP). This exact rational negative control was checked for 15 input sizes in a separate eighth local unit test.
+
 ## Correct public-input constant-gap benchmark
 
 **HCCZ-CIRCUIT-ACCEPT** takes the full public H/CCZ circuit, input computational-basis state and output wire, with a promise that output-one probability is at least 2/3 or at most 1/3. This is a standard PromiseBQP-complete problem: H and Toffoli are quantum universal, and Toffoli is H–CCZ–H on its target. A randomized polynomial-time classical solver for all promised H/CCZ circuits would imply BQP=BPP. Proving nonexistence remains open.
@@ -51,7 +70,7 @@ The package tests a five-qubit non-Clifford **toy control**: H on three data qub
 ## Reproducibility
 
 - physqed_q/attack009_gap.py: exact rational Grover/Chebyshev evaluation, threshold certificates, public H/CCZ controls.
-- tests/test_attack009_gap.py: **7/7 local test methods passed**, including 400 quadratic bound checks, 110 Grover rounding checks, 144 Markov rounding checks, and the five-qubit circuit test.
+- tests/test_attack009_gap.py: **8/8 local test methods passed**, including 400 quadratic bound checks, 110 Grover rounding checks, 144 Markov rounding checks, and the five-qubit circuit test and 15 rational postselection adversarial sizes.
 - tests/independent_attack009_audit.py: independently verifies 330 odd-sine recurrence cases, 40 Chebyshev coefficient identities and 40 unique-SAT threshold cases.
 
 Run from repository root:
