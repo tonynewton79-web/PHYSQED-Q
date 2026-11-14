@@ -220,30 +220,31 @@ def abstract_inverse_qft(n:int,epsilon:Fraction)->AbstractIQFTPlan:
 
 
 def simulate_inverse_qft_ir(plan:AbstractIQFTPlan):
-    """Finite complex matrix IR reference; NOT an H/CCZ compiler."""
-    import numpy as np
+    """Standard-library finite complex reference; NOT H/CCZ compilation."""
     n=plan.n_qubits
     if n>7:raise ValueError("matrix verifier limited to n<=7")
     L=1<<n
-    out=np.eye(L,dtype=complex)
+    out=[[complex(i==j) for j in range(L)] for i in range(L)]
     for kind,qs,d in plan.gates:
         if kind=="SWAP":
             a,b=qs
             for x in range(L):
-                y=x^((1<<a)|(1<<b)) if ((x>>a)&1)^((x>>b)&1) else x
-                if y>x:out[[x,y],:]=out[[y,x],:]
+                if ((x>>a)&1)^((x>>b)&1):
+                    y=x^((1<<a)|(1<<b))
+                    if y>x:out[x],out[y]=out[y],out[x]
         elif kind=="CP":
             a,b=qs
-            theta=-pi/(1<<d)
-            factor=complex(cos(theta),sin(theta))
+            angle=-pi/(1<<d)
+            factor=complex(cos(angle),sin(angle))
             for x in range(L):
-                if (x>>a)&1 and (x>>b)&1:out[x,:]*=factor
+                if (x>>a)&1 and (x>>b)&1:
+                    out[x]=[z*factor for z in out[x]]
         elif kind=="H":
             a=qs[0];bit=1<<a
             for x in range(L):
                 if x&bit:continue
-                v=out[x,:].copy();w=out[x|bit,:].copy()
-                out[x,:]=(v+w)/sqrt(2)
-                out[x|bit,:]=(v-w)/sqrt(2)
+                v=out[x][:];w=out[x|bit][:]
+                out[x]=[(p+q)/sqrt(2) for p,q in zip(v,w)]
+                out[x|bit]=[(p-q)/sqrt(2) for p,q in zip(v,w)]
         else:raise AssertionError("unknown abstract gate")
-    return out
+    return tuple(tuple(row) for row in out)
