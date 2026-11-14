@@ -1,8 +1,8 @@
 """PHYSQED-Q Attack012 exact HCCZ general-order Fourier measurement regression."""
 import unittest
 from fractions import Fraction
-from math import pi
-import numpy as np
+from math import pi,cos,sin,sqrt
+from cmath import exp
 import random
 
 from physqed_q.fourier_stage import (
@@ -62,8 +62,8 @@ class ExactFourierStageTests(unittest.TestCase):
         grid=certified_unit_circle_grid()
         self.assertEqual(len(grid),64)
         for k,(c,s) in enumerate(grid):
-            self.assertLess(abs(c/2**24-np.cos(2*pi*k/64)),2**-22)
-            self.assertLess(abs(s/2**24-np.sin(2*pi*k/64)),2**-22)
+            self.assertLess(abs(c/2**24-cos(2*pi*k/64)),2**-22)
+            self.assertLess(abs(s/2**24-sin(2*pi*k/64)),2**-22)
         self.assertEqual(binary_quadrature_phase([0]*16,[0]*8+[1]*8),0)
 
     def test_exact_rational_grid_unwrap(self):
@@ -74,8 +74,8 @@ class ExactFourierStageTests(unittest.TestCase):
                 for j in range(m):
                     angle=2*pi*(ell*(1<<j)%r)/r
                     reps=4096
-                    nx=round(reps*(1+np.cos(angle))/2)
-                    ny=round(reps*(1+np.sin(angle))/2)
+                    nx=round(reps*(1+cos(angle))/2)
+                    ny=round(reps*(1+sin(angle))/2)
                     xs.append([0]*nx+[1]*(reps-nx))
                     ys.append([0]*ny+[1]*(reps-ny))
                 got=reconstruct_phase_exact(xs,ys)
@@ -116,10 +116,9 @@ class ExactFourierStageTests(unittest.TestCase):
                                  plan.retained_rotation_count*plan.per_retained_rotation_budget,eps)
             actual=simulate_inverse_qft_ir(plan)
             L=1<<m
-            expected=np.array([[np.exp(-2j*np.pi*x*y/L)/np.sqrt(L)
-                                for y in range(L)] for x in range(L)])
-            self.assertLess(np.linalg.norm(actual-expected,2),
-                            float(plan.omitted_rotation_upper_bound)+1e-11)
+            max_error=max(abs(actual[x][y]-exp(-2j*pi*x*y/L)/sqrt(L))
+                          for x in range(L) for y in range(L))
+            self.assertLess(max_error,float(plan.omitted_rotation_upper_bound)+1e-11)
 
     def test_native_output_reader_and_rejections(self):
         stage=compile_fourier_measurement(15,2,2,1)
