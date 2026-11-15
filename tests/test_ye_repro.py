@@ -72,6 +72,18 @@ class YeTwoQubitRepro(unittest.TestCase):
         with self.assertRaisesRegex(CertificateError, "output differs from trace"):
             verify_receipt(forged)
 
+    def test_02b_valid_operator_but_forged_trace_refused(self):
+        receipt = compile_circuit(VALID)
+        forged = deepcopy(receipt)
+        # The *same* correct final circuit now carries a false rewrite label.
+        forged["steps"][0]["rule"] = "HXH_to_Z"
+        forged["receipt_sha256"] = canonical_digest({
+            key: val for key, val in forged.items() if key != "receipt_sha256"
+        })
+        self.assertEqual(unitary(forged["input"]), unitary(forged["optimized"]))
+        with self.assertRaisesRegex(CertificateError, "rewrite trace mismatch"):
+            verify_receipt(forged)
+
     def test_03_unsupported_arbitrary_rotation_refused(self):
         unsupported = {
             "name": "Unsupported RZ(theta) request",
