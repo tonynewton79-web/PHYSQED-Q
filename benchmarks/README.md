@@ -1,5 +1,29 @@
 # Reproducible benchmarks
 
+## Experimental v3 phase ablation (research branch)
+
+The deterministic exact logical comparison, including CNOT-target and H
+negative controls, runs with:
+
+    python -m benchmarks.phase_suite
+    python -m unittest tests.test_phase_optimizer tests.test_phase_benchmark -v
+
+On the control-side CNOT fixture, adjacent and v2 disjoint rewriting retain
+3 gates and 2 T gates. V3 phase mode yields 1 CNOT and 0 T gates. This is a
+restricted ablation versus PHYSQED-Q's own previous policy, not an
+external superiority claim. The CNOT-target negative deliberately retains
+both T gates. All v3 results are checked by exact full-matrix replay.
+
+The pinned *external* baseline uses a real Qiskit 2.6.1 invocation:
+
+    python -m benchmarks.qiskit_compare examples/phase_control.json --level 3 --seed 2026 --optimizer phase
+
+This is one illustrative input, not a held-out matched benchmark. It has
+no device coupling graph, calibrated durations or fidelity observations.
+See [the proof and hardware limits](../docs/phase_commutation_20261118.md).
+
+
+
 ## Internal adjacent-vs-commuting corpus (v0.6A)
 
 This fixed, standard-library-only suite compares the default adjacent policy
