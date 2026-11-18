@@ -1,0 +1,25 @@
+{
+  "name": "Phase commuting through CNOT control",
+  "qubits": 2,
+  "gates": [
+    {
+      "gate": "T",
+      "qubits": [
+        0
+      ]
+    },
+    {
+      "gate": "CNOT",
+      "qubits": [
+        0,
+        1
+      ]
+    },
+    {
+      "gate": "TDG",
+      "qubits": [
+        0
+      ]
+    }
+  ]
+}
