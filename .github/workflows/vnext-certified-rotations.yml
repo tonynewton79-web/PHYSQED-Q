@@ -1,4 +1,4 @@
-name: PHYSQED-Q vNext independent certified rotations
+name: PHYSQED-Q Gate 8 certified rotation engine
 
 on:
   push:
@@ -29,10 +29,10 @@ jobs:
         run: python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
       - name: Compile own declared-noise target without a fake IBM backend
         run: |
-          python -m physqed_q.vnext_cli demo --mode native --output /tmp/vnext-native.json
-          python -m physqed_q.vnext_cli verify /tmp/vnext-native.json --numeric-check
-          python -m physqed_q.vnext_cli demo --mode clifford_t --output /tmp/vnext-clifford-t.json
-          python -m physqed_q.vnext_cli verify /tmp/vnext-clifford-t.json --numeric-check
+          python -m physqed_q.gate8_cli demo --mode native --output /tmp/vnext-native.json
+          python -m physqed_q.gate8_cli verify /tmp/vnext-native.json --numeric-check
+          python -m physqed_q.gate8_cli demo --mode clifford_t --output /tmp/vnext-clifford-t.json
+          python -m physqed_q.gate8_cli verify /tmp/vnext-clifford-t.json --numeric-check
       - name: Store standalone proof-carrying receipts
         if: always()
         uses: actions/upload-artifact@v4
