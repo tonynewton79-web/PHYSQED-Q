@@ -166,8 +166,8 @@ From a checkout of the Mark II branch, without installing any
 third-party Python libraries:
 
     python -m unittest tests.test_vnext_mark2 tests.test_vnext_rotations tests.test_vnext_qasm -v
-    python -m physqed_q.vnext_mark2_cli demo --output mark2-own-line.json
-    python -m physqed_q.vnext_mark2_cli verify mark2-own-line.json
+    python -m physqed_q.mark2_cli demo --output mark2-own-line.json
+    python -m physqed_q.mark2_cli verify mark2-own-line.json
 
 To rerun the 19-source external suite, the same original
 QASMBench files are downloaded by their pinned upstream commit
