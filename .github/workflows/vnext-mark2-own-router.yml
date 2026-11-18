@@ -84,6 +84,8 @@ jobs:
     needs: [mark2-standalone, mark2-external-corpus]
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      ACTUAL_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -118,7 +120,10 @@ jobs:
           manifest=[]
           status={
               "schema":"physqed-q-vnext-mark2-research-release-v1",
-              "source_git_sha":os.environ.get("GITHUB_SHA"),
+              "source_git_sha":os.environ.get("ACTUAL_HEAD_SHA"),
+              "checkout_commit_sha":subprocess.check_output(
+                  ["git","rev-parse","HEAD"],text=True).strip(),
+              "workflow_run_sha":os.environ.get("GITHUB_SHA"),
               "external_original_sources":19,
               "admitted_external_circuits":15,
               "physically_routed_native_certificates":60,
