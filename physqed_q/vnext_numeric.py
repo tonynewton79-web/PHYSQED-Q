@@ -81,16 +81,28 @@ def _evolve(program,start):
     return state
 
 
-def numeric_unitary(program):
-    source=validate_program(program)
+def numeric_unitary(program, *, expanded_native=False):
+    # An authenticated native compilation may contain up to 512
+    # emitted gates from at most 64 source gates. Do not accidentally
+    # apply the source budget to the compiled native output.
+    if expanded_native:
+        if (type(program) is not dict or
+            type(program.get("gates")) is not list or
+            len(program["gates"])>512):
+            raise VNextError("numerical native output beyond certified scope")
+        source=program
+    else:
+        source=validate_program(program)
     return [_evolve(source,i) for i in range(1<<source["qubits"])]
 
 
 def frobenius_projective_distance(document):
     """Numerical Frobenius norm after the EXPLICIT certified global phase."""
+    from .vnext import verify_vnext
+    verify_vnext(document)
     source=document["source"];compiled=document["compiled"]
     a=numeric_unitary(source)
-    b=numeric_unitary(compiled)
+    b=numeric_unitary(compiled,expanded_native=True)
     factor=cmath.exp(1j*math.pi*float(rat(document["global_phase_pi"],
                                           max_abs=1024)))
     squared=0.
