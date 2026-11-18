@@ -1,4 +1,31 @@
-# PHYSQED-Q v0.6B — exact quantum-circuit compiler and verification workbench
+# PHYSQED-Q vNext Mark II — Proof-Carrying Quantum Compiler
+
+**Author: Tony Newton.** This is the working **Mark II research branch**, not the older stable `main` implementation. The core is standard-library Python and does **not** require Qiskit, PyZX, Aer, fake IBM processors, a cloud service or live QPU access.
+
+## The current independent system
+
+- **15/19** pinned original PNNL QASMBench circuits supported through our own vNext rational-angle importer.
+- **60/60** physical native routes independently checked, with 160 explicit inserted SWAPs over the external test matrix.
+- **40** additional randomized complete-operator routing checks and adversarial forged-receipt refusal tests.
+- A declared undirected physical coupling graph, exact SWAP or three-bidirectional-CNOT lowering, explicit final measured-qubit allocation, exact rational site/edge/readout marginal fault-event upper bounds and replayable SHA-integrity receipts.
+- **No experimental processor result**, no general gate-count advantage and no proof of globally optimal routing.
+
+[Mark II verification and mathematical scope](docs/PHYSQED_Q_vNext_Mark_II_Gate9.md) · [Research PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30) · [Parent vNext Alpha PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)
+
+Run this checkout without installing external quantum packages:
+
+```bash
+python -m physqed_q.vnext_mark2_cli demo --output mark2-own-line.json
+python -m physqed_q.vnext_mark2_cli verify mark2-own-line.json
+python -m unittest tests.test_vnext_mark2 tests.test_vnext_rotations tests.test_vnext_qasm -v
+```
+
+The gate-fault ceilings in the example are **synthetic declared assumptions**, not authenticated calibrations. The full original external QASM files are referenced by pinned Git hashes, not bundled or relicensed.
+
+---
+
+## Legacy bounded exact compiler and earlier research notes
+
 
 **Copyright © 2026 Tony Newton.** See [copyright notice](COPYRIGHT.md).
 
