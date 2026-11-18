@@ -9,6 +9,7 @@ capability extension against the known Gate 7 refusals.
 not a fabricated physical rotation or a quantum computer experiment.
 """
 import argparse
+from fractions import Fraction
 from datetime import datetime,timezone
 import json
 from pathlib import Path
@@ -64,6 +65,18 @@ def sweep(folder):
             receipt=compile_vnext(program,target,max_error="0")
             replay=verify_vnext(receipt)
             numeric=check_numeric_bound(receipt)
+            # Two distinct proof stages: (1) original QASM decimal-radian
+            # angles -> rational*pi using exact Machin brackets, (2)
+            # rational*pi source -> target native logical program.
+            # A native RZ target certifies stage 2 exactly, but does NOT
+            # erase stage-1 source-angle approximation.
+            qasm_bound=Fraction(imported[
+                "source_to_rationalpi_projective_bound"])
+            compiler_bound=Fraction(receipt["projective_operator_bound"])
+            total=qasm_bound+compiler_bound
+            if total>Fraction(1,1000000):
+                raise VNextError(
+                    "ORIGINAL_QASM_TO_NATIVE_PROJECTIVE_ERROR_BUDGET_EXCEEDED")
             entry.update({
                 "accepted":True,
                 "import":imported,
@@ -71,6 +84,13 @@ def sweep(folder):
                 "compiled_native_gates":receipt["resource_cost"]["native_gates"],
                 "compiled_native_one_qubit":receipt["resource_cost"]["native_one_qubit"],
                 "compiled_native_two_qubit":receipt["resource_cost"]["native_two_qubit"],
+                "radian_parameter_approximation_count":len(
+                    imported["decimal_radian_witnesses"]),
+                "original_qasm_to_rationalpi_projective_bound":str(qasm_bound),
+                "rationalpi_to_native_projective_bound":str(compiler_bound),
+                "original_qasm_to_native_projective_bound":str(total),
+                "exact_unmodified_source_operator_claim":bool(total==0),
+                "permitted_original_qasm_projective_error":"1/1000000",
                 "exact_projective_error_bound":
                     receipt["projective_operator_bound"],
                 "assumed_stochastic_fault_tvd_bound":
