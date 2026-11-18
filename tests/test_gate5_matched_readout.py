@@ -1,11 +1,17 @@
 """Gate 5 numerical and contract tests. No real-hardware claims."""
 import unittest
-import numpy as np
-from benchmarks.gate5_matched_readout import (
-    readout_channel, simplex_projection, tvd, probs, SHOTS, REPS
-)
+try:
+    import numpy as np
+    from benchmarks.gate5_matched_readout import (
+        readout_channel, simplex_projection, tvd, probs, SHOTS, REPS
+    )
+except ModuleNotFoundError as exc:
+    if exc.name != "numpy":
+        raise
+    np = None
 
 
+@unittest.skipIf(np is None, "optional NumPy dependency unavailable")
 class MatchedReadoutTests(unittest.TestCase):
     def test_readout_counterfactual_and_inversion(self):
         matrices={"0":[[.9,.1],[.1,.9]],"1":[[.8,.2],[.2,.8]]}
