@@ -1,4 +1,29 @@
-# PHYSQED-Q — Verification-First Quantum Compiler
+# PHYSQED-Q vNext Mark II — Verification-First Quantum Compiler
+
+**Latest research headline: Our own proof-carrying physical-circuit router (Gate 9)**  
+**Author: Tony Newton** · Rational error certificates · Exact small-circuit verification · Transparent, declared hardware assumptions.
+
+> **Research status:** Mark II is working on [draft PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30), stacked on the [vNext Alpha PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29). **Both remain unmerged**; the \`main\` branch still contains the earlier stable bounded exact compiler. The headline describes a tested research version, not an already-deployed/default installation.
+
+## Latest breakthrough in the software engineering — Mark II Gate 9
+
+**Our own Python-native router, no Qiskit/PyZX/Aer or IBM fake processor required to compile.** Every physically inserted SWAP or three-CNOT equivalent is recorded, physical readout qubits are constrained explicitly, and fault guarantees are mathematical upper bounds from declared site/edge/readout assumptions.
+
+| Independently verified Mark II research | Result |
+| --- | --- |
+| Original external PNNL QASMBench circuits strictly supported | **15/19** |
+| Full routed physical-circuit operator checks | **60/60 pass** |
+| Counted inserted physical SWAP movements | **160** across the external test matrix |
+| Deterministic randomized full \(2^n\) operator controls | **40** tested |
+| Route fidelity and error calculations | Exact mathematical semantics and rational marginal-fault upper bounds |
+| Processor data | **None** — no hardware shots, fake-backend evidence or claimed hardware superiority |
+
+**[Read and obtain the working Mark II research code, tests and CI artifacts (PR #30)](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30)** · **[Mark II engineering report](https://github.com/tonynewton79-web/PHYSQED-Q/blob/research/vnext-mark2-own-native-router-20261118/docs/PHYSQED_Q_vNext_Mark_II_Gate9.md)**
+
+The target currently models undirected, explicitly bidirectional native CNOT couplings and equal physical/logical width. The local SWAP search is shortest for its current interaction, **not** a globally optimal router. Synthetic fault ceilings are not verified physical calibration. We make no T-count, QPU-fidelity, experimental quantum-advantage or hardware speedup claim.
+
+---
+
 
 **Headline research release: PHYSQED-Q vNext Alpha (Gate 8)**  
 **Author: Tony Newton** · Independent quantum-circuit compilation, exact and bounded-error certificates, and reproducible verification.
