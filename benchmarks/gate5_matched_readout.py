@@ -92,6 +92,7 @@ def shot_study(backend_id, item):
                     "negative_before_projection":bool(np.any(inv < -1.e-10)),
                 })
             series[str(N)]={
+                "trial_results":records,
                 "median_raw_tvd":float(np.median([r["raw_tvd"] for r in records])),
                 "median_mitigated_tvd":float(np.median(
                     [r["mitigated_tvd"] for r in records])),
