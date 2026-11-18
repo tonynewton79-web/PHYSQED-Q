@@ -1,0 +1,41 @@
+name: Gate 5 matched readout and mitigation counterfactual
+
+on:
+  push:
+    branches: ["research/gate5-matched-readout-mitigation-20261118"]
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - "tests/test_gate5_matched_readout.py"
+      - ".github/workflows/gate5-matched-readout.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned archived-model Qiskit Aer and PyZX environment
+        run: python -m pip install -r benchmarks/requirements-gate3.txt
+      - name: Check inverse/noise mathematical boundaries
+        run: python -m unittest tests.test_gate5_matched_readout tests.test_gate4_readout_theorem -v
+      - name: Rerun frozen Gate 4, equalize readout channels and sample mitigation
+        run: python -m benchmarks.gate5_matched_readout --output /tmp/gate5-matched.json
+      - name: Independent classical channel and finite-shot audit
+        run: python -m benchmarks.gate5_audit /tmp/gate5-matched.json --output /tmp/gate5-audit.json
+      - name: Upload full raw record and independent replay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-q-gate5-matched-readout
+          path: |
+            /tmp/gate5-matched.json
+            /tmp/gate5-audit.json
+          if-no-files-found: warn
