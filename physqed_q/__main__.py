@@ -55,8 +55,8 @@ def main(argv=None):
     compiler = sub.add_parser("compile", help="compile JSON circuit and generate exact certificate")
     compiler.add_argument("input", help="input circuit JSON")
     compiler.add_argument("--output", help="optional path for JSON receipt")
-    compiler.add_argument("--optimizer", choices=["adjacent", "commuting"], default="adjacent",
-                          help="rewrite strategy (default: adjacent; commuting is opt-in)")
+    compiler.add_argument("--optimizer", choices=["adjacent", "commuting", "phase"], default="adjacent",
+                          help="rewrite strategy (phase enables verified Z-axis commutation)")
     verifier = sub.add_parser("verify", help="independently replay a JSON receipt")
     verifier.add_argument("receipt", help="receipt file")
     synthesizer = sub.add_parser("synthesize", help="certify bounded exact one-qubit gate-count minimum")
