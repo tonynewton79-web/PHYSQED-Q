@@ -1,0 +1,45 @@
+name: Gate 6 physically routed common-readout experiment
+
+on:
+  push:
+    branches: ["research/gate6-executable-common-readout-20261118"]
+  pull_request:
+    paths:
+      - "benchmarks/gate6*"
+      - "tests/test_gate6*"
+      - ".github/workflows/gate6-common-readout.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned Gate 3 external compilers and simulation
+        run: python -m pip install -r benchmarks/requirements-gate3.txt
+      - name: Check provably shortest physical SWAP placement and invalid routing
+        run: python -m unittest tests.test_gate6_executable_readout -v
+      - name: Compile and simulate all 60 physically matched native candidates
+        run: python -m benchmarks.gate6_executable_readout --output /tmp/gate6-physical-common.json
+      - name: Independently replay all physical wire and distribution ledgers
+        run: python -m benchmarks.gate6_audit /tmp/gate6-physical-common.json --output /tmp/gate6-audit.json
+      - name: Display signed results and audit gate
+        if: always()
+        run: |
+          if [ -f /tmp/gate6-audit.json ]; then cat /tmp/gate6-audit.json; fi
+      - name: Publish complete native gate ledgers and noisy outcome tables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-q-gate6-executable-readout
+          path: |
+            /tmp/gate6-physical-common.json
+            /tmp/gate6-audit.json
+          if-no-files-found: warn
