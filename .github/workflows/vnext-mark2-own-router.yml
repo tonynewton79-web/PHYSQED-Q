@@ -1,4 +1,4 @@
-name: PHYSQED-Q vNext Mark II independent physical router
+name: PHYSQED-Q Mark II independent physical router
 
 on:
   push:
@@ -31,8 +31,8 @@ jobs:
           python -m unittest tests.test_vnext_mark2 tests.test_vnext_rotations tests.test_vnext_qasm -v
       - name: Route four physical qubits and verify the generated native certificate
         run: |
-          python -m physqed_q.vnext_mark2_cli demo --output /tmp/mark2-own-line.json
-          python -m physqed_q.vnext_mark2_cli verify /tmp/mark2-own-line.json
+          python -m physqed_q.mark2_cli demo --output /tmp/mark2-own-line.json
+          python -m physqed_q.mark2_cli verify /tmp/mark2-own-line.json
       - name: Preserve complete native-circuit receipt
         if: always()
         uses: actions/upload-artifact@v4
@@ -116,7 +116,7 @@ jobs:
               raise SystemExit("Mark II release refused: bad original audit data")
           source_files=sorted(p for p in subprocess.check_output(
               ["git","ls-files"],text=True).splitlines() if Path(p).is_file())
-          output=Path("/tmp/PHYSQED_Q_vNext_Mark_II_Gate9_Complete.zip")
+          output=Path("/tmp/PHYSQED_Q_Mark_II_Gate9_Complete.zip")
           manifest=[]
           status={
               "schema":"physqed-q-vnext-mark2-research-release-v1",
@@ -172,6 +172,6 @@ jobs:
       - name: Upload complete runnable Mark II source, all data and proof packets
         uses: actions/upload-artifact@v4
         with:
-          name: PHYSQED-Q-vNext-Mark-II-Gate9-complete
-          path: /tmp/PHYSQED_Q_vNext_Mark_II_Gate9_Complete.zip
+          name: PHYSQED-Q-Mark-II-Gate9-complete
+          path: /tmp/PHYSQED_Q_Mark_II_Gate9_Complete.zip
           if-no-files-found: error
