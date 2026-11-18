@@ -222,6 +222,7 @@ def audit():
             target = {format(i, f"0{n}b"): float(p) for i, p in enumerate(v)}
             row = {
                 "name": name, "qubits": n,
+                "ideal_target_probabilities": target,
                 "full_operator_equivalence": True,
                 "physqed_exact_receipt_hash": receipt["receipt_sha256"],
                 "methods": {}, "contrasts": {},
