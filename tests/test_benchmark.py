@@ -28,6 +28,9 @@ class BenchmarkValidationTests(unittest.TestCase):
         for level in (-1, 4, True, "1"):
             with self.subTest(level=level), self.assertRaises(BenchmarkError):
                 compare(EXAMPLE, level=level)
+        for optimizer in (None, True, "fake", 42):
+            with self.subTest(optimizer=optimizer), self.assertRaises(BenchmarkError):
+                compare(EXAMPLE, optimizer=optimizer)
         for seed in (-1, True, 2**32, "2026"):
             with self.subTest(seed=seed), self.assertRaises(BenchmarkError):
                 compare(EXAMPLE, seed=seed)
@@ -61,6 +64,21 @@ class LiveQiskitTests(unittest.TestCase):
         self.assertEqual(result["physqed_q"]["optimized_metrics"]["gates"], 1)
         self.assertIsInstance(result["qiskit"]["output_metrics"]["gates"], int)
         self.assertIn(result["qiskit"]["exact_operator_equivalent"], (True, False, None))
+
+    def test_phase_policy_external_comparison_contract(self):
+        raw = {"name": "control", "qubits": 2, "gates": [
+            {"gate": "T", "qubits": [0]},
+            {"gate": "CNOT", "qubits": [0, 1]},
+            {"gate": "TDG", "qubits": [0]},
+        ]}
+        result = compare(raw, level=3, seed=2026, optimizer="phase")
+        self.assertEqual(result["physqed_q"]["optimizer"], "phase")
+        self.assertEqual(result["physqed_q"]["optimized_metrics"]["t_gates"], 0)
+        self.assertEqual(result["physqed_q"]["optimized_metrics"]["gates"], 1)
+        self.assertEqual(result["qiskit"]["output_metrics"]["two_qubit_gates"], 1)
+        self.assertIn(result["qiskit"]["status"],
+                      ("exact_operator_equivalent", "not_checkable",
+                       "operator_mismatch_or_phase"))
 
     def test_reject_unsupported_parameter_gate(self):
         from qiskit import QuantumCircuit
