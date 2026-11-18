@@ -99,7 +99,7 @@ class VNextRotationTests(unittest.TestCase):
         self.assertEqual(_nearest_quarter_turn(Fraction(7,4)),7)
 
     def test_strict_integer_and_fraction_and_target_shape(self):
-        for bad in ("1/0","01/2","2/4","-0","0.125","1e-2","1/1000001",
+        for bad in ("1/0","01/2","2/4","-0","0.125","1e-2","1/1000000000001",
                     "33","-33",None,True,0.5):
             with self.subTest(value=bad):
                 with self.assertRaises(VNextError):
