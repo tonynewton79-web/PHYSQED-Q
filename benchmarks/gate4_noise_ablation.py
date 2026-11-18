@@ -22,7 +22,8 @@ from benchmarks.heldout_compare import prerequisites
 
 CASES = ("phase-cancel-n3", "trotter-ising-n4", "ghz-n3",
          "qaoa-path-n3", "cluster-n3")
-SCENARIOS = ("ideal", "calibrated_no_readout", "calibrated_depolarizing_only",
+SCENARIOS = ("ideal", "readout_only", "calibrated_no_readout",
+             "calibrated_with_readout", "calibrated_depolarizing_only",
              "calibrated_relaxation_only", "calibrated_directional_cx_only",
              "direction_swapped_cx_only", "uniform_cx_2percent")
 BACKENDS = ("fake_manila", "fake_lagos")
@@ -133,6 +134,45 @@ def cx_noise(errors, *, mode, common_p=0.02):
                 "reverse_edge_coverage": sum((j, i) in errors for i, j in errors)}
 
 
+def backend_readout_matrices(backend):
+    """Aer-public readout assignment matrices: rows true, columns recorded."""
+    from qiskit_aer.noise.device import basic_device_readout_errors
+    result = {}
+    for physical_qubits, err in basic_device_readout_errors(target=backend.target):
+        if len(physical_qubits) != 1:
+            raise RuntimeError("correlated readout not implemented; refuse")
+        matrix = [[float(v) for v in row] for row in err.probabilities]
+        if len(matrix) != 2 or any(len(row) != 2 for row in matrix):
+            raise RuntimeError("only one-qubit 2x2 readout models supported")
+        if any(not math.isclose(sum(row), 1., abs_tol=1e-10) for row in matrix):
+            raise RuntimeError("bad calibration readout matrix")
+        result[physical_qubits[0]] = matrix
+    return result
+
+
+def apply_independent_readout(quantum_p, measured_physical, calibrations):
+    """Exact classical assignment-channel push-forward on measured bitstrings.
+
+    At each classical bit c, use the calibration matrix of the physical
+    qubit actually measured by that bit, NOT the original logical wire.
+    """
+    n = len(measured_physical)
+    output = {format(i, f"0{n}b"): 0. for i in range(1 << n)}
+    eye = ((1., 0.), (0., 1.))
+    for true_bits, p in quantum_p.items():
+        true = int(true_bits, 2)
+        for observed in range(1 << n):
+            weight = float(p)
+            for c, physical in enumerate(measured_physical):
+                matrix = calibrations.get(physical, eye)
+                weight *= matrix[(true >> c) & 1][(observed >> c) & 1]
+            output[format(observed, f"0{n}b")] += weight
+    if not math.isclose(sum(output.values()), sum(quantum_p.values()),
+                        abs_tol=2e-8):
+        raise RuntimeError("readout assignment channel not stochastic")
+    return output
+
+
 def noise_scenarios(backend):
     from qiskit_aer.noise import NoiseModel
     error_map = cx_error_data(backend)
@@ -205,11 +245,13 @@ def audit():
         if backend.name not in BACKENDS:
             raise RuntimeError("unexpected historical backend")
         noise_models, calibration = noise_scenarios(backend)
+        assignment_matrices = backend_readout_matrices(backend)
         props = backend.properties()
         section = {
             "name": backend.name, "num_physical_qubits": backend.num_qubits,
             "historical_calibration_time": str(props.last_update_date),
             "cx_calibration": calibration,
+            "readout_calibration_by_physical_qubit": assignment_matrices,
             "cases": [],
         }
         for name in CASES:
@@ -243,8 +285,17 @@ def audit():
                     "scenario_tvd": {}, "scenario_probabilities": {},
                 }
                 for scenario in SCENARIOS:
-                    probabilities = run_density_probabilities(
-                        circuit, noise_models[scenario], n)
+                    if scenario == "readout_only":
+                        probabilities = apply_independent_readout(
+                            info["scenario_probabilities"]["ideal"],
+                            measured_physical, assignment_matrices)
+                    elif scenario == "calibrated_with_readout":
+                        probabilities = apply_independent_readout(
+                            info["scenario_probabilities"]["calibrated_no_readout"],
+                            measured_physical, assignment_matrices)
+                    else:
+                        probabilities = run_density_probabilities(
+                            circuit, noise_models[scenario], n)
                     d = tvd(probabilities, target)
                     if scenario == "ideal" and d > TOL:
                         raise RuntimeError("exact noiseless routing control failed")
