@@ -1,16 +1,18 @@
-# PHYSQED-Q vNext Mark II — Proof-Carrying Quantum Compiler
+# PHYSQED-Q Mark II — Proof-Carrying Quantum Compiler
 
 **Author: Tony Newton.** This is the working **Mark II research branch**, not the older stable `main` implementation. The core is standard-library Python and does **not** require Qiskit, PyZX, Aer, fake IBM processors, a cloud service or live QPU access.
 
 ## The current independent system
 
-- **15/19** pinned original PNNL QASMBench circuits supported through our own vNext rational-angle importer.
+- **15/19** pinned original PNNL QASMBench circuits supported through our own Gate 8 rational-angle importer.
 - **60/60** physical native routes independently checked, with 160 explicit inserted SWAPs over the external test matrix.
 - **40** additional randomized complete-operator routing checks and adversarial forged-receipt refusal tests.
 - A declared undirected physical coupling graph, exact SWAP or three-bidirectional-CNOT lowering, explicit final measured-qubit allocation, exact rational site/edge/readout marginal fault-event upper bounds and replayable SHA-integrity receipts.
 - **No experimental processor result**, no general gate-count advantage and no proof of globally optimal routing.
 
-[Mark II verification and mathematical scope](docs/PHYSQED_Q_vNext_Mark_II_Gate9.md) · [Research PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30) · [Parent vNext Alpha PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)
+[Mark II verification and mathematical scope](docs/PHYSQED_Q_Mark_II_Gate9.md) · [Research PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30) · [Gate 8 rotation compiler PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)
+
+The `vnext_*` module paths shown below are stable **internal Python identifiers**, not the project's name.
 
 Run this checkout without installing external quantum packages:
 
