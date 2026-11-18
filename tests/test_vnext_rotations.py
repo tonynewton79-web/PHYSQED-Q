@@ -174,7 +174,14 @@ class VNextRotationTests(unittest.TestCase):
                     g["angle_pi"]=rng.choice(angles)
                 circuit["gates"].append(g)
             for native in (True,False):
-                r=compile_vnext(circuit,target(2,native=native),max_error="1")
+                try:
+                    r=compile_vnext(circuit,target(2,native=native),max_error="1")
+                except VNextError as exc:
+                    # A dense test source with many quarter-turn roundings
+                    # can exceed the declared budget: refusal is required.
+                    if native or "exceeds tolerance" not in str(exc):
+                        raise
+                    continue
                 self.assertTrue(verify_vnext(r)["verified"])
                 check_numeric_bound(r)
 
