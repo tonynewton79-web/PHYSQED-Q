@@ -12,13 +12,13 @@
 
 [Mark II verification and mathematical scope](docs/PHYSQED_Q_Mark_II_Gate9.md) · [Research PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30) · [Gate 8 rotation compiler PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)
 
-The `vnext_*` module paths shown below are stable **internal Python identifiers**, not the project's name.
+The `mark2_cli` command below is the official public entry point. Older `vnext_*` import paths remain only for backwards compatibility.
 
 Run this checkout without installing external quantum packages:
 
 ```bash
-python -m physqed_q.vnext_mark2_cli demo --output mark2-own-line.json
-python -m physqed_q.vnext_mark2_cli verify mark2-own-line.json
+python -m physqed_q.mark2_cli demo --output mark2-own-line.json
+python -m physqed_q.mark2_cli verify mark2-own-line.json
 python -m unittest tests.test_vnext_mark2 tests.test_vnext_rotations tests.test_vnext_qasm -v
 ```
 
