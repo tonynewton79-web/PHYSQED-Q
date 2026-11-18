@@ -48,7 +48,7 @@ def generate(split="heldout"):
                     else:
                         gates.append(g(rng.choice(GATES), rng.randrange(n)))
             else:
-                other = (t + 1) % n if n > 2 else t
+                other = rng.choice([q for q in range(n) if q != c])
                 gates = [
                     g("T", c), g("CNOT", c, t), g("S", c),
                     g("CNOT", c, other), g("TDG", c),
