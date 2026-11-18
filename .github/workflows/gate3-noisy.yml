@@ -1,0 +1,48 @@
+name: Gate 3 historical noisy application comparison
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - "physqed_q/**"
+      - "tests/test_gate3_math.py"
+      - ".github/workflows/gate3-noisy.yml"
+  push:
+    branches: ["research/noisy-applications-gate3-20261118"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate3-aer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pin tested Qiskit, PyZX, IBM historical snapshot, Qiskit Aer
+        run: python -m pip install -r benchmarks/requirements-gate3.txt
+      - name: Check ideal logical circuits and negative controls
+        run: python -m unittest tests.test_gate3_math -v
+      - name: Matched noisy simulator comparison on all locked application circuits
+        run: python -m benchmarks.gate3_noisy --output /tmp/gate3-noisy-results.json
+      - name: Post-hoc robustness — fresh seeds on two historical backends
+        run: python -m benchmarks.gate3_crossbackend --output /tmp/gate3-crossbackend-results.json
+      - name: Show full result summary
+        if: always()
+        run: |
+          if [ -f /tmp/gate3-noisy-results.json ]; then
+            python -c 'import json; d=json.load(open("/tmp/gate3-noisy-results.json")); print(json.dumps({"manifest":d["application_manifest"],"snapshot":d["snapshot"],"settings":d["simulation"],"summary":d["summary"]},indent=2))'
+          fi
+      - name: Upload raw counts, equivalence checks, metrics and negative controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-q-gate3-noisy-historical
+          path: |
+            /tmp/gate3-noisy-results.json
+            /tmp/gate3-crossbackend-results.json
+          if-no-files-found: warn
