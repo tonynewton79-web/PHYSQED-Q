@@ -73,3 +73,27 @@ jobs:
             /tmp/vnext-external-coverage.json
             /tmp/vnext-external-audit.json
           if-no-files-found: warn
+
+
+  independent-published-operator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ONLY the independent Qiskit exact-unitary reference
+        run: python -m pip install qiskit==2.6.1
+      - name: Download every exact SHA-pinned published QASMBench source
+        run: python -c 'from benchmarks.gate7_qasmbench import acquire_sources; acquire_sources("/tmp/vnext-independent-sources")'
+      - name: Compare all 15 admissible original source operators against own interpreter
+        run: |
+          python -m benchmarks.vnext_qiskit_crosscheck --source-dir /tmp/vnext-independent-sources --output /tmp/vnext-independent-qiskit-operators.json
+      - name: Archive independently sourced operator comparisons
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-vnext-independent-original-qasm-operators
+          path: /tmp/vnext-independent-qiskit-operators.json
+          if-no-files-found: warn
