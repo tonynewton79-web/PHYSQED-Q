@@ -26,7 +26,8 @@ def probabilities(p,width):
         raise RuntimeError("nonstandard bitstring keys")
     if any(not math.isfinite(v) or v < -1e-12 for v in p.values()):
         raise RuntimeError("bad probability value")
-    close(sum(p.values()),1.,"distribution normalization")
+    if abs(sum(p.values()) - 1.) > 2e-8:
+        raise RuntimeError("distribution normalization differs beyond density-matrix tolerance")
 
 
 def validate(report):
