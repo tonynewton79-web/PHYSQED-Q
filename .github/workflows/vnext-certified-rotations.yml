@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Verify exact rational bounds, semantics and forged receipts (no packages)
-        run: python -m unittest tests.test_vnext_rotations -v
+        run: python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
       - name: Compile own declared-noise target without a fake IBM backend
         run: |
           python -m physqed_q.vnext_cli demo --mode native --output /tmp/vnext-native.json
@@ -41,4 +41,30 @@ jobs:
           path: |
             /tmp/vnext-native.json
             /tmp/vnext-clifford-t.json
+          if-no-files-found: warn
+
+
+  third-party-source-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prove we use no Qiskit/Aer/PyZX dependencies
+        run: |
+          python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
+          python -c 'import importlib.util; assert all(importlib.util.find_spec(x) is None for x in ("qiskit", "qiskit_aer", "pyzx"))'
+      - name: Download all 19 frozen PNNL QASMBench source Git blobs
+        run: python -c 'from benchmarks.gate7_qasmbench import acquire_sources; acquire_sources("/tmp/vnext-pnnl-source")'
+      - name: Reaudit 19 originals with our own compiler, proof checker and dense oracle
+        run: |
+          python -m benchmarks.vnext_external_qasmbench --source-dir /tmp/vnext-pnnl-source --output /tmp/vnext-external-coverage.json
+      - name: Retain every external acceptance/refusal and exact native receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-vnext-pnnl-external-coverage
+          path: /tmp/vnext-external-coverage.json
           if-no-files-found: warn
