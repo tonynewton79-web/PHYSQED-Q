@@ -1,5 +1,6 @@
 """Dependency-free vNext QASM source semantics, no external quantum stack."""
 import unittest
+from fractions import Fraction
 from physqed_q.vnext import VNextError, compile_vnext,NATIVE_GATES
 from physqed_q.vnext_numeric import check_numeric_bound
 from physqed_q.vnext_qasm import strict_import,fractional_pi
