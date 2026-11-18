@@ -18,7 +18,7 @@ def cases():
         ("target-CNOT-negative", 2, [g("T", 1), g("CNOT", 0, 1), g("TDG", 1)]),
         ("CZ-diagonal", 2, [g("T", 1), g("CZ", 0, 1), g("TDG", 1)]),
         ("H-barrier-negative", 2, [g("T", 0), g("H", 0), g("TDG", 0)]),
-        ("three-CNOTs", 3, [g("T", 0), g("CNOT", 0, 1),
+        ("two-control-CNOTs", 3, [g("T", 0), g("CNOT", 0, 1),
                             g("CNOT", 0, 2), g("TDG", 0)]),
         ("four-qubit-control", 4, [g("T", 0), g("CZ", 0, 3),
                                   g("CNOT", 0, 2), g("TDG", 0)]),
