@@ -38,7 +38,7 @@ class VNextError(ValueError):
     """Fail-closed vNext input, target, or proof violation."""
 
 
-def rat(s,*,max_abs=32, max_den=1000000):
+def rat(s,*,max_abs=32, max_den=1000000000000):
     """Only canonical bounded strings such as -3/4 or 1; never JSON float."""
     if type(s) is not str or len(s)>32 or ANGLES.fullmatch(s) is None:
         raise VNextError("rational must be canonical bounded string")
