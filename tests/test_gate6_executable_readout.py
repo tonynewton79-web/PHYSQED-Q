@@ -55,7 +55,12 @@ class Gate6SwapRoutingTests(unittest.TestCase):
             token_route((0,1),(2,3),((0,1),(2,3)))
 
     def test_physical_measurement_destinations_from_qiskit(self):
-        from qiskit import QuantumCircuit
+        try:
+            from qiskit import QuantumCircuit
+        except ModuleNotFoundError as exc:
+            if exc.name != "qiskit":
+                raise
+            self.skipTest("optional Qiskit dependency unavailable")
         qc=QuantumCircuit(5,3)
         qc.measure(2,0)
         qc.measure(0,1)
