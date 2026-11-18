@@ -18,7 +18,7 @@
 | Route fidelity and error calculations | Exact mathematical semantics and rational marginal-fault upper bounds |
 | Processor data | **None** — no hardware shots, fake-backend evidence or claimed hardware superiority |
 
-**[Read and obtain the working Mark II research code, tests and CI artifacts (PR #30)](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30)** · **[Mark II engineering report](https://github.com/tonynewton79-web/PHYSQED-Q/blob/research/vnext-mark2-own-native-router-20261118/docs/PHYSQED_Q_vNext_Mark_II_Gate9.md)**
+**[Read and obtain the working Mark II research code, tests and CI artifacts (PR #30)](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30)** · **[Mark II engineering report](https://github.com/tonynewton79-web/PHYSQED-Q/blob/research/vnext-mark2-own-native-router-20261118/docs/PHYSQED_Q_Mark_II_Gate9.md)**
 
 The target currently models undirected, explicitly bidirectional native CNOT couplings and equal physical/logical width. The local SWAP search is shortest for its current interaction, **not** a globally optimal router. Synthetic fault ceilings are not verified physical calibration. We make no T-count, QPU-fidelity, experimental quantum-advantage or hardware speedup claim.
 
