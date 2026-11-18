@@ -85,8 +85,16 @@ jobs:
           python-version: "3.12"
       - name: Install ONLY the independent Qiskit exact-unitary reference
         run: python -m pip install qiskit==2.6.1
-      - name: Download every exact SHA-pinned published QASMBench source
-        run: python -c 'from benchmarks.gate7_qasmbench import acquire_sources; acquire_sources("/tmp/vnext-independent-sources")'
+      - name: Download every exact SHA-pinned published QASMBench source (bounded network retries)
+        run: |
+          for attempt in 1 2 3; do
+            if python -c 'from benchmarks.gate7_qasmbench import acquire_sources; acquire_sources("/tmp/vnext-independent-sources")'; then
+              exit 0
+            fi
+            echo "Published original-source download failed, attempt $attempt of 3" >&2
+            sleep 5
+          done
+          exit 1
       - name: Compare all 15 admissible original source operators against own interpreter
         run: |
           python -m benchmarks.vnext_qiskit_crosscheck --source-dir /tmp/vnext-independent-sources --output /tmp/vnext-independent-qiskit-operators.json
