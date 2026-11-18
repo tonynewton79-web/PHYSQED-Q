@@ -100,7 +100,6 @@ def unmeasured_native_with_save(native, n):
 
 def cx_error_data(backend):
     """Recorded directional CNOT error probabilities on historical target."""
-    from qiskit_aer.noise import NoiseError
     result = {}
     if "cx" not in backend.target:
         raise RuntimeError("historical backend missing cx gate target")
