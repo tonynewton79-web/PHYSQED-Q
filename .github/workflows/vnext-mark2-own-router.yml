@@ -78,3 +78,95 @@ jobs:
             /tmp/mark2-external.json
             /tmp/mark2-external-audit.json
           if-no-files-found: warn
+
+
+  mark2-verified-release:
+    needs: [mark2-standalone, mark2-external-corpus]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download complete hosted operator and routing evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mark2-*
+          path: /tmp/mark2-hosted-evidence
+          merge-multiple: false
+      - name: Prepare complete SHA-256-manifest release including source and 60 external certificates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib, os, subprocess, zipfile
+          root=Path("/tmp/mark2-hosted-evidence")
+          artifacts=sorted(p for p in root.rglob("*") if p.is_file())
+          names={p.name for p in artifacts}
+          needed={"mark2-own-line.json","mark2-external.json","mark2-external-audit.json"}
+          if not needed.issubset(names):
+              raise SystemExit("Mark II release refused: missing independently checked proof inputs")
+          original=json.loads(next(p for p in artifacts if p.name=="mark2-external.json").read_text())
+          audit=json.loads(next(p for p in artifacts if p.name=="mark2-external-audit.json").read_text())
+          if (original.get("routed_native_circuits")!=60 or audit.get("status")!="PASS"
+              or audit.get("native_full_operator_certificates_replayed")!=60
+              or audit.get("total_inserted_swaps_across_test_matrix")!=160):
+              raise SystemExit("Mark II release refused: bad original audit data")
+          source_files=sorted(p for p in subprocess.check_output(
+              ["git","ls-files"],text=True).splitlines() if Path(p).is_file())
+          output=Path("/tmp/PHYSQED_Q_vNext_Mark_II_Gate9_Complete.zip")
+          manifest=[]
+          status={
+              "schema":"physqed-q-vnext-mark2-research-release-v1",
+              "source_git_sha":os.environ.get("GITHUB_SHA"),
+              "external_original_sources":19,
+              "admitted_external_circuits":15,
+              "physically_routed_native_certificates":60,
+              "counted_inserted_swaps":160,
+              "independent_audit_status":"PASS",
+              "python3_11_and3_12_tested":True,
+              "original_pnnl_qasm_source_text_redistributed":False,
+              "live_qpu_executed":False,
+              "fake_backend_used":False,
+              "verified_calibration":False,
+              "source_branch_research_draft":True,
+              "sha_manifest_is_an_integrity_check_not_a_signature":True,
+          }
+          with zipfile.ZipFile(output,"w",zipfile.ZIP_DEFLATED) as z:
+              for name in source_files:
+                  dest="repository/"+name
+                  payload=Path(name).read_bytes()
+                  z.writestr(dest,payload)
+                  manifest.append((dest,hashlib.sha256(payload).hexdigest()))
+              for path in artifacts:
+                  dest="verification/"+str(path.relative_to(root))
+                  payload=path.read_bytes()
+                  z.writestr(dest,payload)
+                  manifest.append((dest,hashlib.sha256(payload).hexdigest()))
+              payload=(json.dumps(status,sort_keys=True,indent=2)+"\n").encode()
+              z.writestr("RELEASE_SCOPE.json",payload)
+              manifest.append(("RELEASE_SCOPE.json",hashlib.sha256(payload).hexdigest()))
+              z.writestr("MANIFEST_SHA256.txt",
+                  "".join(f"{sha}  {name}\n" for name,sha in manifest))
+          with zipfile.ZipFile(output) as z:
+              if z.testzip() is not None:
+                  raise SystemExit("ZIP CRC integrity check failed")
+              for line in z.read("MANIFEST_SHA256.txt").decode().splitlines():
+                  expect,path=line.split("  ",1)
+                  if hashlib.sha256(z.read(path)).hexdigest()!=expect:
+                      raise SystemExit("ZIP internal SHA integrity failure: "+path)
+          print(json.dumps({
+              "archive":str(output),
+              "bytes":output.stat().st_size,
+              "sha256":hashlib.sha256(output.read_bytes()).hexdigest(),
+              "manifest_verified_entries":len(manifest),
+              "source_files":len(source_files),
+              "hosted_evidence_files":len(artifacts),
+          },sort_keys=True))
+          PY
+      - name: Upload complete runnable Mark II source, all data and proof packets
+        uses: actions/upload-artifact@v4
+        with:
+          name: PHYSQED-Q-vNext-Mark-II-Gate9-complete
+          path: /tmp/PHYSQED_Q_vNext_Mark_II_Gate9_Complete.zip
+          if-no-files-found: error
