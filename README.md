@@ -1,9 +1,9 @@
-# PHYSQED-Q vNext Mark II — Verification-First Quantum Compiler
+# PHYSQED-Q Mark II — Verification-First Quantum Compiler
 
 **Latest research headline: Our own proof-carrying physical-circuit router (Gate 9)**  
 **Author: Tony Newton** · Rational error certificates · Exact small-circuit verification · Transparent, declared hardware assumptions.
 
-> **Research status:** Mark II is working on [draft PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30), stacked on the [vNext Alpha PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29). **Both remain unmerged**; the `main` branch still contains the earlier stable bounded exact compiler. The headline describes a tested research version, not an already-deployed/default installation.
+> **Research status:** Mark II is working on [draft PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30), stacked on the [Gate 8 Rotation Compiler PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29). **Both remain unmerged**; the `main` branch still contains the earlier stable bounded exact compiler. The headline describes a tested research version, not an already-deployed/default installation.
 
 ## Latest verified software advance — Mark II Gate 9
 
@@ -25,14 +25,14 @@ The target currently models undirected, explicitly bidirectional native CNOT cou
 ---
 
 
-**Headline research release: PHYSQED-Q vNext Alpha (Gate 8)**  
+**Earlier research milestone: PHYSQED-Q Gate 8 — Certified Rotation Compiler**  
 **Author: Tony Newton** · Independent quantum-circuit compilation, exact and bounded-error certificates, and reproducible verification.
 
-> **Research-release status:** The working vNext source is published in **[draft PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)**. It has not been merged into `main`. The stable code currently on `main` remains the earlier bounded exact compiler, and the existing exact-certificate workflows remain intact. Do not mistake the research preview for the default installed version.
+> **Research-release status:** The working Gate 8 rotation-compiler source is published in **[draft PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)**. It has not been merged into `main`. The stable code currently on `main` remains the earlier bounded exact compiler, and the existing exact-certificate workflows remain intact. Do not mistake the research preview for the default installed version.
 
-## PHYSQED-Q vNext — Main research headline
+## PHYSQED-Q Gate 8 — Certified Rotation Compiler
 
-The next version is **our own Python-standard-library compilation and verification system**. Its mathematical core does **not** call Qiskit, PyZX, Qiskit Aer, or an IBM fake backend. We independently cross-check its results against Qiskit on the original published sources, but do not use Qiskit to produce vNext's circuits or certificates.
+Gate 8 established **our own Python-standard-library compilation and verification system**. Its mathematical core does **not** call Qiskit, PyZX, Qiskit Aer, or an IBM fake backend. We independently cross-check its results against Qiskit on the original published sources, but do not use Qiskit to produce Gate 8's circuits or certificates.
 
 | Verified Gate 8 research result | Evidence |
 | --- | --- |
@@ -43,15 +43,15 @@ The next version is **our own Python-standard-library compilation and verificati
 | **Our own target/error specification** | Explicit connectivity and conditional stochastic fault bounds |
 | **No live QPU tests** | No measured hardware fidelity, no claimed general T-count advantage |
 
-**Get vNext:** [working draft code and verified Gate 8 research](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29) · [Mark II research roadmap](https://github.com/tonynewton79-web/PHYSQED-Q/pulls) · [Gateway to the original PNNL QASMBench reference](https://github.com/pnnl/QASMBench).
+**Get the Gate 8 rotation compiler:** [working draft code and verified Gate 8 research](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29) · [Mark II research roadmap](https://github.com/tonynewton79-web/PHYSQED-Q/pulls) · [Gateway to the original PNNL QASMBench reference](https://github.com/pnnl/QASMBench).
 
-Run the independent Gate 8 candidate from the source checkout (PR #29, not `main`):
+Run the Gate 8 rotation compiler from its source checkout (PR #29, not `main`). The `vnext_*` Python module identifiers are **legacy internal import paths**, not the product name:
 
 ```bash
-python -m physqed_q.vnext_cli demo --mode native --output vnext-native.json
-python -m physqed_q.vnext_cli verify vnext-native.json --numeric-check
-python -m physqed_q.vnext_cli demo --mode clifford_t --output vnext-ft.json
-python -m physqed_q.vnext_cli verify vnext-ft.json --numeric-check
+python -m physqed_q.vnext_cli demo --mode native --output gate8-native.json
+python -m physqed_q.vnext_cli verify gate8-native.json --numeric-check
+python -m physqed_q.vnext_cli demo --mode clifford_t --output gate8-clifford-t.json
+python -m physqed_q.vnext_cli verify gate8-clifford-t.json --numeric-check
 python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
 ```
 
