@@ -5,8 +5,9 @@ The original external QASM source remains unchanged and SHA tracked.
 
 Supported bounded declarations: OPENQASM 2.0; qelib1.inc; named
 single registers qreg/creg; H X Z S SDG T TDG CX CZ SWAP; rotations
-rz rx ry and u3 with exact rational multiples of pi. Bare nonzero
-decimal radians are refused (not magically rational-pi angles).
+rz rx ry and u3 with exact rational multiples of pi. Bare finite
+decimal radians are converted to bounded rational-pi angles ONLY with
+an explicit rational error certificate derived from Machin pi bounds.
 Measurements are tracked using original classical register order,
 including nonidentity output mapping. A measurement can be moved
 to the end only if no subsequent unitary touches that measured qubit
@@ -20,6 +21,7 @@ import re
 
 from .vnext import VNextError,validate_program,rat
 from .kernel import SINGLE,DOUBLE
+from .pi_interval import approximate_decimal_radians_as_pi,PI_LOWER,PI_UPPER
 
 MAX_BYTES=40000
 _IDENT=r"[A-Za-z_][A-Za-z_0-9]*"
@@ -43,26 +45,39 @@ MAP=dict(zip(
 ))
 
 
-def fractional_pi(token):
-    """Only an *exactly specified* rational multiple of pi is admissible."""
+def _angle_with_certificate(token):
+    """(rational-pi coefficient, rigorous absolute radian error upper)."""
     text=token.strip().replace(" ","")
     if text in ("0","+0","-0","0.0","+0.0","-0.0"):
-        return "0"
+        return "0",Fraction(0)
     match=PI_FLOAT.fullmatch(text)
-    if match is None:
-        raise VNextError("UNSUPPORTED_NON_RATIONAL_PI_ANGLE: "+text[:45])
-    leading= -1 if match.group(1)=="-" else 1
-    number=match.group(2)
-    if number is None:
-        fraction=Fraction(leading)
-    else:
-        fraction=Fraction(number)*leading
-    if abs(fraction)>32 or fraction.denominator>1000000000000:
-        raise VNextError("ANGLE_RATIONAL_BOUND_EXCEEDED")
-    # rat checks canonical bounded exact rational string.
-    out=str(fraction)
-    rat(out)
-    return out
+    if match is not None:
+        leading= -1 if match.group(1)=="-" else 1
+        number=match.group(2)
+        if number is None:
+            fraction=Fraction(leading)
+        else:
+            fraction=Fraction(number)*leading
+        if abs(fraction)>32 or fraction.denominator>1000000000000:
+            raise VNextError("ANGLE_RATIONAL_BOUND_EXCEEDED")
+        out=str(fraction)
+        rat(out)
+        return out,Fraction(0)
+    if PLAIN_NUMERIC.fullmatch(text):
+        try:
+            theta=Fraction(text)
+            approx,delta=approximate_decimal_radians_as_pi(theta)
+            out=str(approx)
+            rat(out)
+            return out,delta
+        except (ValueError,OverflowError,ZeroDivisionError) as exc:
+            raise VNextError("DECIMAL_RADIAN_CERTIFICATION_REFUSED") from exc
+    raise VNextError("UNSUPPORTED_ANGLE_EXPRESSION: "+text[:45])
+
+
+def fractional_pi(token):
+    """Compat helper: returns coefficient only; strict importer records error."""
+    return _angle_with_certificate(token)[0]
 
 
 def strict_import(text,*,name="external-qasm"):
@@ -78,6 +93,8 @@ def strict_import(text,*,name="external-qasm"):
     qregs={};cregs={};nq=0;nc=0
     gates=[];measures={};started_operations=False
     deferred_count=0
+    radian_witnesses=[]
+    import_projective_bound=Fraction(0)
     for index,statement in enumerate(statements[2:],2):
         stmt=statement.strip()
         declaration=DECL.fullmatch(stmt)
@@ -173,10 +190,28 @@ def strict_import(text,*,name="external-qasm"):
         if measures:
             deferred_count+=1
         g={"gate":opcode,"qubits":qs}
-        if expected_params==1:
-            g["angle_pi"]=fractional_pi(param[0])
-        elif expected_params==3:
-            g["angles_pi"]=[fractional_pi(v) for v in param]
+        if expected_params:
+            parsed=[]
+            for argument_index,value in enumerate(param):
+                approximant,delta=_angle_with_certificate(value)
+                parsed.append(approximant)
+                if delta:
+                    radian_witnesses.append({
+                        "statement_index":index,
+                        "logical_gate_index":len(gates),
+                        "parameter_index":argument_index,
+                        "original_decimal_radians":value.strip(),
+                        "replacement_rational_pi":approximant,
+                        "absolute_angle_error_upper":str(delta),
+                        "projective_operator_bound":str(delta/2),
+                    })
+                    # Rotational gate projective norm is 1-Lipschitz
+                    # in half the angular displacement, even for U3.
+                    import_projective_bound+=delta/2
+            if expected_params==1:
+                g["angle_pi"]=parsed[0]
+            else:
+                g["angles_pi"]=parsed
         gates.append(g)
         if len(gates)>64:
             raise VNextError("QASM_CIRCUIT_EXCEEDS_64_GATE_CERT_SCOPE")
@@ -196,4 +231,8 @@ def strict_import(text,*,name="external-qasm"):
         "source_sha256":hashlib.sha256(text.encode("utf8")).hexdigest(),
         "source_unchanged":True,
         "general_dynamic_circuit_supported":False,
+        "decimal_radian_witnesses":radian_witnesses,
+        "source_to_rationalpi_projective_bound":str(import_projective_bound),
+        "exact_rational_pi_lower":str(PI_LOWER),
+        "exact_rational_pi_upper":str(PI_UPPER),
     }
