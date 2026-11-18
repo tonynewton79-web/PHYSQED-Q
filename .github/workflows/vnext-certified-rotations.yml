@@ -1,0 +1,44 @@
+name: PHYSQED-Q vNext independent certified rotations
+
+on:
+  push:
+    branches: ["research/vnext-independent-certified-rotations-20261118"]
+  pull_request:
+    paths:
+      - "physqed_q/vnext*.py"
+      - "tests/test_vnext*.py"
+      - ".github/workflows/vnext-certified-rotations.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independent-vnext:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify exact rational bounds, semantics and forged receipts (no packages)
+        run: python -m unittest tests.test_vnext_rotations -v
+      - name: Compile own declared-noise target without a fake IBM backend
+        run: |
+          python -m physqed_q.vnext_cli demo --mode native --output /tmp/vnext-native.json
+          python -m physqed_q.vnext_cli verify /tmp/vnext-native.json --numeric-check
+          python -m physqed_q.vnext_cli demo --mode clifford_t --output /tmp/vnext-clifford-t.json
+          python -m physqed_q.vnext_cli verify /tmp/vnext-clifford-t.json --numeric-check
+      - name: Store standalone proof-carrying receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-vnext-standalone-${{ matrix.python-version }}
+          path: |
+            /tmp/vnext-native.json
+            /tmp/vnext-clifford-t.json
+          if-no-files-found: warn
