@@ -1,0 +1,186 @@
+name: PHYSQED-Q Gate 8 certified rotation engine
+
+on:
+  push:
+    branches: ["research/vnext-independent-certified-rotations-20261118"]
+  pull_request:
+    paths:
+      - "physqed_q/vnext*.py"
+      - "tests/test_vnext*.py"
+      - ".github/workflows/vnext-certified-rotations.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independent-vnext:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify exact rational bounds, semantics and forged receipts (no packages)
+        run: python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
+      - name: Compile own declared-noise target without a fake IBM backend
+        run: |
+          python -m physqed_q.gate8_cli demo --mode native --output /tmp/vnext-native.json
+          python -m physqed_q.gate8_cli verify /tmp/vnext-native.json --numeric-check
+          python -m physqed_q.gate8_cli demo --mode clifford_t --output /tmp/vnext-clifford-t.json
+          python -m physqed_q.gate8_cli verify /tmp/vnext-clifford-t.json --numeric-check
+      - name: Store standalone proof-carrying receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-vnext-standalone-${{ matrix.python-version }}
+          path: |
+            /tmp/vnext-native.json
+            /tmp/vnext-clifford-t.json
+          if-no-files-found: warn
+
+
+  third-party-source-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prove we use no Qiskit/Aer/PyZX dependencies
+        run: |
+          python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
+          python -c 'import importlib.util; assert all(importlib.util.find_spec(x) is None for x in ("qiskit", "qiskit_aer", "pyzx"))'
+      - name: Download all 19 frozen PNNL QASMBench source Git blobs
+        run: python -c 'from benchmarks.gate7_qasmbench import acquire_sources; acquire_sources("/tmp/vnext-pnnl-source")'
+      - name: Reaudit 19 originals with our own compiler, proof checker and dense oracle
+        run: |
+          python -m benchmarks.vnext_external_qasmbench --source-dir /tmp/vnext-pnnl-source --output /tmp/vnext-external-coverage.json
+      - name: Independently replay exact pi interval bounds and all 19 source decisions
+        run: |
+          python -m benchmarks.vnext_audit /tmp/vnext-external-coverage.json --source-dir /tmp/vnext-pnnl-source --output /tmp/vnext-external-audit.json
+      - name: Retain every external acceptance/refusal and exact native receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-vnext-pnnl-external-coverage
+          path: |
+            /tmp/vnext-external-coverage.json
+            /tmp/vnext-external-audit.json
+          if-no-files-found: warn
+
+
+  independent-published-operator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ONLY the independent Qiskit exact-unitary reference
+        run: python -m pip install qiskit==2.6.1
+      - name: Download every exact SHA-pinned published QASMBench source (bounded network retries)
+        run: |
+          for attempt in 1 2 3; do
+            if python -c 'from benchmarks.gate7_qasmbench import acquire_sources; acquire_sources("/tmp/vnext-independent-sources")'; then
+              exit 0
+            fi
+            echo "Published original-source download failed, attempt $attempt of 3" >&2
+            sleep 5
+          done
+          exit 1
+      - name: Compare all 15 admissible original source operators against own interpreter
+        run: |
+          python -m benchmarks.vnext_qiskit_crosscheck --source-dir /tmp/vnext-independent-sources --output /tmp/vnext-independent-qiskit-operators.json
+      - name: Archive independently sourced operator comparisons
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-vnext-independent-original-qasm-operators
+          path: /tmp/vnext-independent-qiskit-operators.json
+          if-no-files-found: warn
+
+
+  verified-scope-release-packet:
+    needs: [independent-vnext, third-party-source-coverage, independent-published-operator]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve verification receipts and both independent external audits
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/vnext-proof-artifacts
+          pattern: physqed-vnext-*
+          merge-multiple: false
+      - name: Package complete original code and proof data with independently recomputable SHA256
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, zipfile, hashlib, json, os
+          source = [s for s in subprocess.check_output(
+              ["git","ls-files"],text=True).splitlines() if Path(s).is_file()]
+          artifacts=Path("/tmp/vnext-proof-artifacts")
+          evidence=sorted(x for x in artifacts.rglob("*") if x.is_file())
+          mandatory={"vnext-native.json","vnext-clifford-t.json",
+                     "vnext-external-coverage.json","vnext-external-audit.json",
+                     "vnext-independent-qiskit-operators.json"}
+          present={p.name for p in evidence}
+          if not mandatory.issubset(present):
+              raise SystemExit("cannot release: incomplete proof artifact family")
+          out=Path("/tmp/PHYSQED_Q_vNext_Gate8_Complete.zip")
+          hashes=[]
+          with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED) as z:
+              for path in source:
+                  dest="repository/"+path
+                  data=Path(path).read_bytes()
+                  z.writestr(dest,data)
+                  hashes.append((dest,hashlib.sha256(data).hexdigest()))
+              for file in evidence:
+                  dest="verification/"+str(file.relative_to(artifacts))
+                  data=file.read_bytes()
+                  z.writestr(dest,data)
+                  hashes.append((dest,hashlib.sha256(data).hexdigest()))
+              status={
+                  "schema":"physqed-q-vnext-gate8-release-v1",
+                  "source_git_sha":os.environ.get("GITHUB_SHA"),
+                  "proven_by_hosted_CI":True,
+                  "external_corpus_originals_included":False,
+                  "original_pnnl_sources_only_by_exact_pinned_SHA":True,
+                  "qiskit_required_by_compiler":False,
+                  "fake_backend_used":False,
+                  "quantum_hardware_measurements":False,
+                  "independently_verified_real_calibration":False,
+                  "research_alpha_draft_not_stable":True,
+                  "files_in_release":len(source)+len(evidence),
+              }
+              data=(json.dumps(status,sort_keys=True,indent=2)+"\n").encode()
+              z.writestr("RELEASE_SCOPE.json",data)
+              hashes.append(("RELEASE_SCOPE.json",hashlib.sha256(data).hexdigest()))
+              z.writestr("MANIFEST_SHA256.txt",
+                  "".join(f"{sha}  {p}\n" for p,sha in hashes))
+          with zipfile.ZipFile(out) as z:
+              bad=z.testzip()
+              assert bad is None
+              assert "MANIFEST_SHA256.txt" in z.namelist()
+          print(json.dumps({
+              "bundle":str(out),"bytes":out.stat().st_size,
+              "sha256":hashlib.sha256(out.read_bytes()).hexdigest(),
+              "files":len(hashes)+1,
+          },sort_keys=True))
+          PY
+      - name: Upload complete PHYSQED-Q vNext downloadable research system
+        uses: actions/upload-artifact@v4
+        with:
+          name: PHYSQED-Q-vNext-Gate8-complete-release
+          path: /tmp/PHYSQED_Q_vNext_Gate8_Complete.zip
+          if-no-files-found: error
