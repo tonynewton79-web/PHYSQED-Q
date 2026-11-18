@@ -1,0 +1,42 @@
+name: PHYSQED-Q vNext Mark II independent physical router
+
+on:
+  push:
+    branches: ["research/vnext-mark2-own-native-router-20261118"]
+  pull_request:
+    paths:
+      - "physqed_q/vnext_mark2*.py"
+      - "tests/test_vnext_mark2.py"
+      - "benchmarks/vnext_mark2*.py"
+      - ".github/workflows/vnext-mark2-own-router.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mark2-standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      matrix:
+        py: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+      - name: Own exact physical route, independent 2^n-unitary oracle and 40 random circuits
+        run: |
+          python -m unittest tests.test_vnext_mark2 tests.test_vnext_rotations tests.test_vnext_qasm -v
+      - name: Route four physical qubits and verify the generated native certificate
+        run: |
+          python -m physqed_q.vnext_mark2_cli demo --output /tmp/mark2-own-line.json
+          python -m physqed_q.vnext_mark2_cli verify /tmp/mark2-own-line.json
+      - name: Preserve complete native-circuit receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mark2-own-native-receipt-${{ matrix.py }}
+          path: /tmp/mark2-own-line.json
+          if-no-files-found: warn
