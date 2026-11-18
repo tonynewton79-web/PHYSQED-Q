@@ -33,7 +33,7 @@ def probs(data, n):
 
 def readout_channel(matrices, physical_assignment):
     """Column-stochastic M[observed, true], with bit 0 least significant."""
-    one = [np.array(matrices[str(q)], dtype=float).T for q in physical_assignment]
+    one = [np.array((matrices[q] if q in matrices else matrices[str(q)]), dtype=float).T for q in physical_assignment]
     M = one[-1]
     for matrix in one[-2::-1]:
         M = np.kron(M, matrix)
