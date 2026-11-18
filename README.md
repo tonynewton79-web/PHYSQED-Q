@@ -3,9 +3,9 @@
 **Latest research headline: Our own proof-carrying physical-circuit router (Gate 9)**  
 **Author: Tony Newton** · Rational error certificates · Exact small-circuit verification · Transparent, declared hardware assumptions.
 
-> **Research status:** Mark II is working on [draft PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30), stacked on the [vNext Alpha PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29). **Both remain unmerged**; the \`main\` branch still contains the earlier stable bounded exact compiler. The headline describes a tested research version, not an already-deployed/default installation.
+> **Research status:** Mark II is working on [draft PR #30](https://github.com/tonynewton79-web/PHYSQED-Q/pull/30), stacked on the [vNext Alpha PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29). **Both remain unmerged**; the `main` branch still contains the earlier stable bounded exact compiler. The headline describes a tested research version, not an already-deployed/default installation.
 
-## Latest breakthrough in the software engineering — Mark II Gate 9
+## Latest verified software advance — Mark II Gate 9
 
 **Our own Python-native router, no Qiskit/PyZX/Aer or IBM fake processor required to compile.** Every physically inserted SWAP or three-CNOT equivalent is recorded, physical readout qubits are constrained explicitly, and fault guarantees are mathematical upper bounds from declared site/edge/readout assumptions.
 
@@ -28,7 +28,7 @@ The target currently models undirected, explicitly bidirectional native CNOT cou
 **Headline research release: PHYSQED-Q vNext Alpha (Gate 8)**  
 **Author: Tony Newton** · Independent quantum-circuit compilation, exact and bounded-error certificates, and reproducible verification.
 
-> **Research-release status:** The working vNext source is published in **[draft PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)**. It has not been merged into \`main\`. The stable code currently on \`main\` remains the earlier bounded exact compiler, and the existing exact-certificate workflows remain intact. Do not mistake the research preview for the default installed version.
+> **Research-release status:** The working vNext source is published in **[draft PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)**. It has not been merged into `main`. The stable code currently on `main` remains the earlier bounded exact compiler, and the existing exact-certificate workflows remain intact. Do not mistake the research preview for the default installed version.
 
 ## PHYSQED-Q vNext — Main research headline
 
@@ -45,21 +45,21 @@ The next version is **our own Python-standard-library compilation and verificati
 
 **Get vNext:** [working draft code and verified Gate 8 research](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29) · [Mark II research roadmap](https://github.com/tonynewton79-web/PHYSQED-Q/pulls) · [Gateway to the original PNNL QASMBench reference](https://github.com/pnnl/QASMBench).
 
-Run the independent Gate 8 candidate from the source checkout (PR #29, not \`main\`):
+Run the independent Gate 8 candidate from the source checkout (PR #29, not `main`):
 
-\`\`\`bash
+```bash
 python -m physqed_q.vnext_cli demo --mode native --output vnext-native.json
 python -m physqed_q.vnext_cli verify vnext-native.json --numeric-check
 python -m physqed_q.vnext_cli demo --mode clifford_t --output vnext-ft.json
 python -m physqed_q.vnext_cli verify vnext-ft.json --numeric-check
 python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
-\`\`\`
+```
 
 **Boundaries:** The certified projective-operator error is mathematical. A declared stochastic-noise target supplies a *conditional* output-error bound, not a measured processor calibration. The quarter-turn Clifford+T policy is deliberately coarse; it does not outperform state-of-the-art synthesis in general. The original QASMBench files are referenced by pinned hashes rather than redistributed.
 
 ---
 
-## Earlier stable implementation on \`main\` — v0.6B
+## Earlier stable implementation on `main` — v0.6B
 
 
 **Copyright © 2026 Tony Newton.** See [copyright notice](COPYRIGHT.md).
