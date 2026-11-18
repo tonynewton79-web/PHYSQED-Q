@@ -103,8 +103,17 @@ def frobenius_projective_distance(document):
     source=document["source"];compiled=document["compiled"]
     a=numeric_unitary(source)
     b=numeric_unitary(compiled,expanded_native=True)
-    factor=cmath.exp(1j*math.pi*float(rat(document["global_phase_pi"],
-                                          max_abs=1024)))
+    # A phase is an exact SUM of multiple admissible source angles;
+    # its reduced denominator may exceed each single input's cap.
+    # The authenticated receipt was replayed above, so impose a
+    # separate output-length bound rather than reapplying input limits.
+    phase_text=document["global_phase_pi"]
+    if type(phase_text) is not str or len(phase_text)>2048:
+        raise VNextError("numeric phase representation over budget")
+    global_phase=Fraction(phase_text)
+    if abs(global_phase)>1024:
+        raise VNextError("numeric phase magnitude over budget")
+    factor=cmath.exp(1j*math.pi*float(global_phase))
     squared=0.
     for col_a,col_b in zip(a,b):
         for x,y in zip(col_a,col_b):
@@ -115,8 +124,10 @@ def frobenius_projective_distance(document):
 def check_numeric_bound(document, tolerance=2.e-10):
     """Frobenius <= sqrt(2^n)*operator upper bound, a necessary control."""
     fro=frobenius_projective_distance(document)
-    logical=float(rat(document["projective_operator_bound"],
-                      max_abs=1024))
+    upper_text=document["projective_operator_bound"]
+    if type(upper_text) is not str or len(upper_text)>2048:
+        raise VNextError("numeric bound representation over budget")
+    logical=float(Fraction(upper_text))
     worst=math.sqrt(1<<document["source"]["qubits"])*logical
     if fro > worst+tolerance:
         raise VNextError("independent complex matrix violates claimed projective bound")
