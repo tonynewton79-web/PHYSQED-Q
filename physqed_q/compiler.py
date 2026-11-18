@@ -20,6 +20,7 @@ SCOPE = {
     "integrity_not_authenticity": True,
 }
 RECEIPT_SCHEMA_V2 = "physqed-q-exact-receipt-v2"
+RECEIPT_SCHEMA_V3 = "physqed-q-exact-receipt-v3"
 V2_SCOPE = MappingProxyType({
     "kernel": "exact operator equality in Q(sqrt(2),i); at most four qubits",
     "lean_kernel_verified": False,
@@ -28,6 +29,10 @@ V2_SCOPE = MappingProxyType({
     "integrity_not_authenticity": True,
     "optimizer": "commuting-disjoint-v1",
 })
+PHASE_SCOPE = MappingProxyType({
+    **V2_SCOPE, "optimizer": "phase-commuting-v1",
+})
+PHASE_GATES = frozenset({"Z", "S", "SDG", "T", "TDG"})
 MAX_COMMUTING_STEPS = MAX_GATES * MAX_GATES + MAX_GATES
 
 
@@ -102,7 +107,29 @@ def _with_gates(original, gates):
     return {"name": original["name"], "qubits": original["qubits"], "gates": gates}
 
 
-def _commuting_rewrites(gates):
+def _phase_swap_rule(left, right):
+    """An exact sound subset of commutations; right is moved to the left.
+
+    Disjoint supports always commute. A diagonal single-wire Z-axis phase
+    also commutes with other diagonal phases, CZ, and a CNOT when its qubit
+    is the control (but NOT the target). H, X, target-side CNOT and SWAP
+    remain barriers. This is not a general commutation or phase optimizer.
+    """
+    if not set(left["qubits"]).intersection(right["qubits"]):
+        return "commute_disjoint"
+    if right["gate"] not in PHASE_GATES or len(right["qubits"]) != 1:
+        return None
+    q = right["qubits"][0]
+    if left["gate"] in PHASE_GATES and left["qubits"] == [q]:
+        return "commute_phase"
+    if left["gate"] == "CZ" and q in left["qubits"]:
+        return "commute_phase"
+    if left["gate"] == "CNOT" and left["qubits"][0] == q:
+        return "commute_phase"
+    return None
+
+
+def _commuting_rewrites(gates, *, phase=False):
     """Derive canonical moves; swaps only expose an existing two-gate rule.
 
     Adjacent reductions take priority. Otherwise the increasing (i, j) search
@@ -124,9 +151,14 @@ def _commuting_rewrites(gates):
                     found = _replacement([current[i], current[j]], 0)
                     if found is None:
                         continue
-                    support = set(current[i]["qubits"]) | set(current[j]["qubits"])
-                    if any(support.intersection(g["qubits"]) for g in current[i + 1:j]):
-                        continue
+                    if phase:
+                        if any(_phase_swap_rule(current[k], current[j]) is None
+                               for k in range(i + 1, j)):
+                            continue
+                    else:
+                        support = set(current[i]["qubits"]) | set(current[j]["qubits"])
+                        if any(support.intersection(g["qubits"]) for g in current[i + 1:j]):
+                            continue
                     # Store only positions: each swap uses the updated word.
                     moves = [(at, None) for at in range(j - 1, i, -1)]
                     moves.append((i, found))
@@ -139,27 +171,31 @@ def _commuting_rewrites(gates):
             if count >= MAX_COMMUTING_STEPS:
                 raise CertificateError("unbounded trace")
             if found is None:
-                found = ("commute_disjoint", 2, [current[at + 1], current[at]])
+                rule = (_phase_swap_rule(current[at], current[at + 1])
+                        if phase else "commute_disjoint")
+                if rule is None:
+                    raise CertificateError("phase commutation invariant failed")
+                found = (rule, 2, [current[at + 1], current[at]])
             current, step = _step(current, at, found)
             count += 1
             yield current, step
 
 
-def _compile_commuting(raw):
+def _compile_commuting(raw, *, phase=False):
     source = validate_circuit(raw)
     current = source["gates"]
     trace = []
-    for current, step in _commuting_rewrites(current):
+    for current, step in _commuting_rewrites(current, phase=phase):
         trace.append(step)
     optimized = _with_gates(source, current)
     document = {
-        "schema": RECEIPT_SCHEMA_V2,
+        "schema": RECEIPT_SCHEMA_V3 if phase else RECEIPT_SCHEMA_V2,
         "input": source,
         "optimized": optimized,
         "steps": trace,
         "operator_sha256": unitary_digest(source),
         "metrics": {"input": metrics(source), "optimized": metrics(optimized)},
-        "scope": dict(V2_SCOPE),
+        "scope": dict(PHASE_SCOPE if phase else V2_SCOPE),
     }
     document["receipt_sha256"] = _hash(document)
     verify_receipt(document)
@@ -170,6 +206,8 @@ def compile_circuit(raw, *, optimizer="adjacent"):
     """Generate a candidate receipt, subject to mandatory exact replay."""
     if optimizer == "commuting":
         return _compile_commuting(raw)
+    if optimizer == "phase":
+        return _compile_commuting(raw, phase=True)
     if optimizer != "adjacent":
         raise CertificateError("unsupported optimizer")
     source = validate_circuit(raw)
@@ -311,8 +349,13 @@ def _validate_v2_shape(receipt):
     if not _has_fields(receipt, required):
         raise CertificateError("unknown receipt fields")
     scope = receipt["scope"]
-    if not _has_fields(scope, set(V2_SCOPE)) or any(
-            type(scope[k]) is not type(v) or scope[k] != v for k, v in V2_SCOPE.items()):
+    schema = receipt["schema"]
+    if schema not in {RECEIPT_SCHEMA_V2, RECEIPT_SCHEMA_V3}:
+        raise CertificateError("unsupported receipt scope/schema")
+    expected_scope = PHASE_SCOPE if schema == RECEIPT_SCHEMA_V3 else V2_SCOPE
+    if not _has_fields(scope, set(expected_scope)) or any(
+            type(scope[k]) is not type(v) or scope[k] != v
+            for k, v in expected_scope.items()):
         raise CertificateError("unsupported receipt scope/schema")
     claimed_steps = receipt["steps"]
     if type(claimed_steps) is not list or len(claimed_steps) > MAX_COMMUTING_STEPS:
@@ -339,8 +382,10 @@ def _validate_v2_shape(receipt):
 
 def verify_receipt(receipt):
     """Verify untrusted v1 receipts unchanged, or replay the versioned v2 policy."""
-    if not isinstance(receipt, dict) or receipt.get("schema") != RECEIPT_SCHEMA_V2:
+    if (not isinstance(receipt, dict) or
+            receipt.get("schema") not in {RECEIPT_SCHEMA_V2, RECEIPT_SCHEMA_V3}):
         return _verify_adjacent_receipt(receipt)
+    phase = receipt["schema"] == RECEIPT_SCHEMA_V3
     source, target = _validate_v2_shape(receipt)
     if type(receipt["receipt_sha256"]) is not str or _hash({
         k: v for k, v in receipt.items() if k != "receipt_sha256"
@@ -354,7 +399,7 @@ def verify_receipt(receipt):
         claimed_steps = receipt["steps"]
         current = source["gates"]
         checked = 0
-        for next_gates, expected in _commuting_rewrites(current):
+        for next_gates, expected in _commuting_rewrites(current, phase=phase):
             if checked >= len(claimed_steps):
                 raise CertificateError("trace ends before deterministic normalization")
             claimed = claimed_steps[checked]
