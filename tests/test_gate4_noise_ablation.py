@@ -13,7 +13,7 @@ class Gate4Contracts(unittest.TestCase):
         self.assertEqual(len(CASES), 5)
         self.assertEqual(len(set(CASES)), 5)
         self.assertEqual(len(SCENARIOS), 9)
-        self.assertEqual(len(set(SCENARIOS)), 7)
+        self.assertEqual(len(set(SCENARIOS)), 9)
         names = {row["name"] for row in corpus()}
         self.assertTrue(set(CASES) <= names)
         self.assertIn("direction_swapped_cx_only", SCENARIOS)
