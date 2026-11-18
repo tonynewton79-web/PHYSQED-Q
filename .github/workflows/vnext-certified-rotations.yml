@@ -97,3 +97,82 @@ jobs:
           name: physqed-vnext-independent-original-qasm-operators
           path: /tmp/vnext-independent-qiskit-operators.json
           if-no-files-found: warn
+
+
+  signed-scope-release-packet:
+    needs: [independent-vnext, third-party-source-coverage, independent-published-operator]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve verification receipts and both independent external audits
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/vnext-proof-artifacts
+          pattern: physqed-vnext-*
+          merge-multiple: false
+      - name: Package complete original code and proof data with independently recomputable SHA256
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, zipfile, hashlib, json, os
+          source = [s for s in subprocess.check_output(
+              ["git","ls-files"],text=True).splitlines() if Path(s).is_file()]
+          artifacts=Path("/tmp/vnext-proof-artifacts")
+          evidence=sorted(x for x in artifacts.rglob("*") if x.is_file())
+          mandatory={"vnext-native.json","vnext-clifford-t.json",
+                     "vnext-external-coverage.json","vnext-external-audit.json",
+                     "vnext-independent-qiskit-operators.json"}
+          present={p.name for p in evidence}
+          if not mandatory.issubset(present):
+              raise SystemExit("cannot release: incomplete proof artifact family")
+          out=Path("/tmp/PHYSQED_Q_vNext_Gate8_Complete.zip")
+          hashes=[]
+          with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED) as z:
+              for path in source:
+                  dest="repository/"+path
+                  data=Path(path).read_bytes()
+                  z.writestr(dest,data)
+                  hashes.append((dest,hashlib.sha256(data).hexdigest()))
+              for file in evidence:
+                  dest="verification/"+str(file.relative_to(artifacts))
+                  data=file.read_bytes()
+                  z.writestr(dest,data)
+                  hashes.append((dest,hashlib.sha256(data).hexdigest()))
+              status={
+                  "schema":"physqed-q-vnext-gate8-release-v1",
+                  "source_git_sha":os.environ.get("GITHUB_SHA"),
+                  "proven_by_hosted_CI":True,
+                  "external_corpus_originals_included":False,
+                  "original_pnnl_sources_only_by_exact_pinned_SHA":True,
+                  "qiskit_required_by_compiler":False,
+                  "fake_backend_used":False,
+                  "quantum_hardware_measurements":False,
+                  "independently_verified_real_calibration":False,
+                  "research_alpha_draft_not_stable":True,
+                  "files_in_release":len(source)+len(evidence),
+              }
+              data=(json.dumps(status,sort_keys=True,indent=2)+"\n").encode()
+              z.writestr("RELEASE_SCOPE.json",data)
+              hashes.append(("RELEASE_SCOPE.json",hashlib.sha256(data).hexdigest()))
+              z.writestr("MANIFEST_SHA256.txt",
+                  "".join(f"{sha}  {p}\n" for p,sha in hashes))
+          with zipfile.ZipFile(out) as z:
+              bad=z.testzip()
+              assert bad is None
+              assert "MANIFEST_SHA256.txt" in z.namelist()
+          print(json.dumps({
+              "bundle":str(out),"bytes":out.stat().st_size,
+              "sha256":hashlib.sha256(out.read_bytes()).hexdigest(),
+              "files":len(hashes)+1,
+          },sort_keys=True))
+          PY
+      - name: Upload complete PHYSQED-Q vNext downloadable research system
+        uses: actions/upload-artifact@v4
+        with:
+          name: PHYSQED-Q-vNext-Gate8-complete-release
+          path: /tmp/PHYSQED_Q_vNext_Gate8_Complete.zip
+          if-no-files-found: error
