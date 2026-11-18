@@ -1,0 +1,29 @@
+{
+  "name": "OWN_DECLARED_LOCAL_2Q_NO_REAL_HARDWARE",
+  "qubits": 2,
+  "couplings": [
+    [
+      0,
+      1
+    ]
+  ],
+  "one_qubit_fault": "1/1000",
+  "two_qubit_fault": "1/100",
+  "readout_faults": [
+    "1/100",
+    "1/100"
+  ],
+  "provenance": "synthetic",
+  "native_gates": [
+    "CNOT",
+    "CZ",
+    "H",
+    "S",
+    "SDG",
+    "SWAP",
+    "T",
+    "TDG",
+    "X",
+    "Z"
+  ]
+}
