@@ -1,0 +1,48 @@
+name: Gate 4 shotless historical noise-mechanism ablation
+
+on:
+  push:
+    branches: ["research/gate4-noise-causality-20261118"]
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - "tests/test_gate4_noise_ablation.py"
+      - ".github/workflows/gate4-noise-ablation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install already pinned Qiskit Aer PyZX and IBM historical backend
+        run: python -m pip install -r benchmarks/requirements-gate3.txt
+      - name: Verify exact circuits and ablation boundary conditions
+        run: |
+          python -m unittest tests.test_gate4_noise_ablation tests.test_gate3_math -v
+      - name: Run shotless density-matrix counterfactual mechanisms
+        run: python -m benchmarks.gate4_noise_ablation --output /tmp/gate4-ablation.json
+      - name: Independently check numerical result summaries and physical ledgers
+        run: |
+          python -m benchmarks.gate4_audit /tmp/gate4-ablation.json --output /tmp/gate4-audit.json
+      - name: Show and retain machine-readable results
+        if: always()
+        run: |
+          for filename in /tmp/gate4-audit.json; do
+            if [ -f "$filename" ]; then cat "$filename"; fi
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: physqed-q-gate4-shotless-ablation
+          path: |
+            /tmp/gate4-ablation.json
+            /tmp/gate4-audit.json
+          if-no-files-found: warn
