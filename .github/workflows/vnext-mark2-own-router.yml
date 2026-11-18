@@ -40,3 +40,41 @@ jobs:
           name: mark2-own-native-receipt-${{ matrix.py }}
           path: /tmp/mark2-own-line.json
           if-no-files-found: warn
+
+
+  mark2-external-corpus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Confirm no Qiskit, PyZX or Aer in Mark II core environment
+        run: |
+          python -c 'import importlib.util; assert all(importlib.util.find_spec(x) is None for x in ("qiskit","pyzx","qiskit_aer"))'
+      - name: Obtain exact pinned 19 original published QASMBench files
+        run: |
+          for attempt in 1 2 3; do
+            if python -c 'from benchmarks.gate7_qasmbench import acquire_sources; acquire_sources("/tmp/mark2-original-pnnl")'; then
+              exit 0
+            fi
+            echo "Retry external source retrieval (all SHA-1 checked)" >&2
+            sleep 5
+          done
+          exit 1
+      - name: Build 60 physical circuits on own line targets with enforced output allocation
+        run: |
+          python -m benchmarks.vnext_mark2_external --sources /tmp/mark2-original-pnnl --output /tmp/mark2-external.json
+      - name: Independently replay each native gate ledger, operator and correlated fault upper bound
+        run: |
+          python -m benchmarks.vnext_mark2_audit /tmp/mark2-external.json --sources /tmp/mark2-original-pnnl --output /tmp/mark2-external-audit.json
+      - name: Preserve complete 60-circuit proof evidence and independent audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mark2-original-pnnl-60-native-certificates
+          path: |
+            /tmp/mark2-external.json
+            /tmp/mark2-external-audit.json
+          if-no-files-found: warn
