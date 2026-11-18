@@ -99,7 +99,7 @@ jobs:
           if-no-files-found: warn
 
 
-  signed-scope-release-packet:
+  verified-scope-release-packet:
     needs: [independent-vnext, third-party-source-coverage, independent-published-operator]
     runs-on: ubuntu-latest
     timeout-minutes: 12
