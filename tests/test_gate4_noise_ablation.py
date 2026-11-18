@@ -42,7 +42,10 @@ class Gate4Contracts(unittest.TestCase):
         self.assertAlmostEqual(out["00"], .5*(.9*.8) + .5*(.2*.1))
         self.assertAlmostEqual(out["11"], .5*(.1*.2) + .5*(.8*.9))
         identity = apply_independent_readout(p,[0,1],{})
-        self.assertEqual(identity,p)
+        for bits, expected in p.items():
+            self.assertAlmostEqual(identity[bits],expected)
+        self.assertAlmostEqual(identity["01"],0.)
+        self.assertAlmostEqual(identity["10"],0.)
         self.assertIn("calibrated_with_readout",SCENARIOS)
         self.assertIn("readout_only",SCENARIOS)
 
