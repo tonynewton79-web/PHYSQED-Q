@@ -1,4 +1,4 @@
-# PHYSQED-Q vNext alpha (Gate 8)
+# PHYSQED-Q Gate 8 — Certified Rotation Compiler
 ## A self-contained, proof-carrying rotation compiler with a declared physical fault envelope
 
 **Author:** Tony Newton
@@ -8,7 +8,7 @@
 This is a working new PHYSQED-Q research version, implemented in
 standard-library Python. It does NOT replace or weaken the established
 v1-v3 exact circuit kernel or its receipt formats. The new components
-are separate and opt-in:
+are separate and opt-in. Some Python filenames retain the historical `vnext_*` prefix solely for import and certificate compatibility; **it is not the system's name**:
 
 - physqed_q/vnext.py — certified, bounded rotation lowering, rational
   global phase, operator-error and conditional physical fault budgets
@@ -23,7 +23,7 @@ are separate and opt-in:
   benchmarks/vnext_qiskit_crosscheck.py — 19-source external evaluation,
   independent rational audit and optional original-QASM numerical comparison
 
-**NO fake IBM backend is used for this vNext mathematical core or its
+**NO fake IBM backend is used for this Gate 8 mathematical core or its
 external source-coverage benchmark.** The declared target is NOT an
 experimentally measured device. Real hardware execution remains unavailable
 until device access, fresh calibration and measured shots are supplied.
@@ -127,10 +127,10 @@ physical routing automation is a separate future upgrade.
 
 Run from the PHYSQED-Q repository root:
 
-    python -m physqed_q.vnext_cli demo --mode native --output vnext-native.json
-    python -m physqed_q.vnext_cli verify vnext-native.json --numeric-check
-    python -m physqed_q.vnext_cli demo --mode clifford_t --output vnext-ft.json
-    python -m physqed_q.vnext_cli verify vnext-ft.json --numeric-check
+    python -m physqed_q.vnext_cli demo --mode native --output gate8-native.json
+    python -m physqed_q.vnext_cli verify gate8-native.json --numeric-check
+    python -m physqed_q.vnext_cli demo --mode clifford_t --output gate8-clifford-t.json
+    python -m physqed_q.vnext_cli verify gate8-clifford-t.json --numeric-check
     python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
 
 A native mode target implements exact logical RZPI; the finite
@@ -148,7 +148,7 @@ Exactly the same 19 original upstream files and content SHA1 checks
 are reused. File contents are NOT vendored here, and upstream license
 metadata was NOASSERTION in our audit.
 
-| Test | Earlier PHYSQED-Q Gate 7 | New vNext alpha |
+| Test | Earlier PHYSQED-Q Gate 7 | New Gate 8 rotation engine |
 | --- | ---: | ---: |
 | Original, SHA-pinned external QASM files | 19 | 19 |
 | Admitted and verified | 10 | **15** |
@@ -166,7 +166,7 @@ witnesses were checked with exact rational pi brackets.
 A SEPARATE optional Qiskit 2.6.1 comparison parses the *original*
 QASMBench files and checks all 15 full operators up to global
 phase; the largest observed floating-point Frobenius discrepancy was
-about 7.11e-15. Qiskit is NOT used by the vNext compiler or primary
+about 7.11e-15. Qiskit is NOT used by the Gate 8 compiler or primary
 19-case coverage workflow.
 
 The remaining four refusals have specific reasons:
@@ -183,7 +183,7 @@ QPU result is admitted.
 
 - Deterministic, bounded JSON; canonical Fraction inputs; no Python
   float accepted as certificate input
-- Separate vNext schema and self-contained SHA-256 integrity digest;
+- Separate Gate 8 receipt schema and self-contained SHA-256 integrity digest;
   the digest is not a digital signature
 - Recomputed rotations, phases, cost counts, fault assumptions and
   source-to-target error bounds on verification
