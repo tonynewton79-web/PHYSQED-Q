@@ -113,6 +113,37 @@ For all FIVE fixtures, both backends:
   for each backend. This is a purpose-selected small POST-HOC set,
   not a statistically general success rate or external ranking.
 
+## Exact rational readout-allocation identity (elementary, not novelty)
+
+The **ideal 3-qubit phase-cancellation circuit** generates
+
+    p(x2,x1,x0) = (1/4) * 1[x2=0].
+
+Thus low bits x0 and x1 are exactly uniform, and x2 is exactly zero.
+For independent **symmetric** binary-readout channels, the uniform
+low-bit marginals remain invariant. If the physical qubit measured for
+classical bit x2 has bit-flip probability e, the observed distribution
+has probability (1-e)/4 on each x2=0 string and e/4 on each x2=1
+string. Therefore
+
+    TVD(observed_readout_only, p) = e       EXACTLY.
+
+The other two qubits' symmetric readout error probabilities cancel from
+this particular TVD. This is a standard stochastic-channel identity.
+
+On the archived snapshots, PHYSQED-Q measures x2 on physical q1,
+PyZX measures x2 on physical q2. Hence the readout-only signed contrast
+is **exactly** e(q1)-e(q2), requiring no quantum simulator:
+
+    FakeManila:  219/10000 - 964/10000   = -745/10000  = -0.0745
+    FakeLagos: 1362/10000 - 4638/10000  = -3276/10000 = -0.3276
+
+The project now has an independently replayed test using
+Python fractions.Fraction across 80 rational readout-error combinations,
+plus both exact archived contrasts. For asymmetric, correlated or
+context-dependent measurement channels, this simple identity does NOT
+automatically apply.
+
 ## Why this matters scientifically
 
 It is a real methodological correction: a compiler may look better in
