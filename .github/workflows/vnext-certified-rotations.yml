@@ -61,10 +61,15 @@ jobs:
       - name: Reaudit 19 originals with our own compiler, proof checker and dense oracle
         run: |
           python -m benchmarks.vnext_external_qasmbench --source-dir /tmp/vnext-pnnl-source --output /tmp/vnext-external-coverage.json
+      - name: Independently replay exact pi interval bounds and all 19 source decisions
+        run: |
+          python -m benchmarks.vnext_audit /tmp/vnext-external-coverage.json --source-dir /tmp/vnext-pnnl-source --output /tmp/vnext-external-audit.json
       - name: Retain every external acceptance/refusal and exact native receipt
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: physqed-vnext-pnnl-external-coverage
-          path: /tmp/vnext-external-coverage.json
+          path: |
+            /tmp/vnext-external-coverage.json
+            /tmp/vnext-external-audit.json
           if-no-files-found: warn
