@@ -1,0 +1,68 @@
+name: Held-out Qiskit PyZX and historical calibration audit
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - "physqed_q/**"
+      - "tests/test_heldout_suite.py"
+      - ".github/workflows/heldout-external.yml"
+  workflow_dispatch:
+  push:
+    branches: ["research/heldout-qiskit-pyzx-calibration-20261118"]
+    paths:
+      - "benchmarks/**"
+      - "physqed_q/**"
+      - "tests/test_heldout_suite.py"
+      - ".github/workflows/heldout-external.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  external:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      short_summary: ${{ steps.heldout.outputs.short_summary }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned external tools and historical calibration snapshot
+        run: python -m pip install -r benchmarks/requirements-heldout.txt
+      - name: Verify corpus and internal assertions
+        run: python -m unittest tests.test_heldout_suite tests.test_phase_optimizer -v
+      - name: Development split smoke test (no native)
+        run: python -m benchmarks.heldout_compare --split dev --no-native --output /tmp/heldout-dev.json
+      - name: Execute prespecified held-out split and historical native proxies
+        id: heldout
+        run: |
+          python -m benchmarks.heldout_compare --split heldout --output /tmp/heldout-report.json --github-output "$GITHUB_OUTPUT"
+      - name: Show report metadata and calibration coverage
+        if: always()
+        run: |
+          if [ -f /tmp/heldout-report.json ]; then
+            python -c 'import json; r=json.load(open("/tmp/heldout-report.json")); print(json.dumps({"manifest":r["manifest"],"summary":r["summary"],"snapshot":r["settings"]["snapshot"]},indent=2))'
+          fi
+      - name: Upload complete machine-readable audit records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physqed-q-heldout-audit
+          path: |
+            /tmp/heldout-dev.json
+            /tmp/heldout-report.json
+          if-no-files-found: warn
+  results:
+    needs: external
+    if: always()
+    runs-on: ubuntu-latest
+    name: "Results ${{ needs.external.outputs.short_summary }}"
+    steps:
+      - name: Reproducible result status
+        run: |
+          echo "Complete pipeline result: ${{ needs.external.result }}"
+          echo "Read the full artifact and check selection/exclusion details."
+          test "${{ needs.external.result }}" = "success"
