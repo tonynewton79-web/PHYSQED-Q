@@ -3,6 +3,7 @@ import unittest
 from physqed_q.vnext import VNextError, compile_vnext,NATIVE_GATES
 from physqed_q.vnext_numeric import check_numeric_bound
 from physqed_q.vnext_qasm import strict_import,fractional_pi
+from physqed_q.pi_interval import PI_LOWER,PI_UPPER,approximate_decimal_radians_as_pi
 
 
 def qasm(body, registers="qreg q[3];\ncreg c[3];"):
@@ -19,11 +20,7 @@ def target(n):
 
 class ExternalQASMTests(unittest.TestCase):
     def test_rational_pi_decimal_is_exact_not_floating(self):
-        cases={"pi*1.79986":"89993/50000",
-               "pi*-3.59973":"-359973/100000",
-               "pi*0.0564006755":"112801351/2000000000",
-               "pi*0.545344":"851/1562" if False else "851/1562"}
-        # Check exact parse against Fraction independently.
+        # Check exact decimal-pi parsing against Fraction independently.
         from fractions import Fraction
         self.assertEqual(fractional_pi("pi*1.79986"),
                          str(Fraction("1.79986")))
@@ -34,8 +31,11 @@ class ExternalQASMTests(unittest.TestCase):
         self.assertEqual(fractional_pi("pi"),"1")
         self.assertEqual(fractional_pi("-pi"),"-1")
         self.assertEqual(fractional_pi("0"),"0")
-        with self.assertRaisesRegex(VNextError,"UNSUPPORTED_NON_RATIONAL_PI"):
-            fractional_pi("1.5707963267948966")
+        q=Fraction(fractional_pi("1.5707963267948966"))
+        theta=Fraction("1.5707963267948966")
+        self.assertLessEqual(
+            max(abs(theta-q*PI_LOWER),abs(theta-q*PI_UPPER)),
+            Fraction(1,10000000000))
         with self.assertRaises(VNextError):
             fractional_pi("1.2j")
         with self.assertRaises(VNextError):
@@ -86,11 +86,30 @@ measure q[1]->c[1]; measure q[2]->c[2];"""))
             strict_import(qasm("""reset q[0];
 measure q[0]->c[0]; measure q[1]->c[1]; measure q[2]->c[2];"""))
 
-    def test_refuse_unsupported_qasm_and_bare_radian(self):
-        bad=qasm("""u3(-0.58,0,0) q[2];
+    def test_bare_decimal_radians_produce_rigorous_error_receipt(self):
+        data=qasm("""u3(-0.58,0,0) q[2];
 measure q[0]->c[0]; measure q[1]->c[1]; measure q[2]->c[2];""")
-        with self.assertRaisesRegex(VNextError,"UNSUPPORTED_NON_RATIONAL_PI"):
-            strict_import(bad)
+        imported=strict_import(data)
+        self.assertEqual(len(imported["decimal_radian_witnesses"]),1)
+        from fractions import Fraction
+        self.assertGreater(Fraction(
+            imported["source_to_rationalpi_projective_bound"]),0)
+        self.assertLess(Fraction(
+            imported["source_to_rationalpi_projective_bound"]),
+            Fraction(1,1000000000))
+        check_numeric_bound(compile_vnext(imported["program"],target(3),
+                                          max_error="0"))
+
+    def test_exact_rational_machin_pi_bounds(self):
+        self.assertLess(PI_LOWER,PI_UPPER)
+        self.assertGreater(PI_LOWER,Fraction(314159265358979,10**14))
+        self.assertLess(PI_UPPER,Fraction(22,7))
+        q,e=approximate_decimal_radians_as_pi(Fraction("1.5707963267948966"))
+        self.assertGreaterEqual(e,abs(Fraction("1.5707963267948966")-q*PI_LOWER))
+        self.assertGreaterEqual(e,abs(Fraction("1.5707963267948966")-q*PI_UPPER))
+        self.assertLess(e,Fraction(1,10000000000))
+
+    def test_refuse_unsupported_qasm(self):
         bad=qasm("""cu1(pi/2) q[0],q[1];
 measure q[0]->c[0]; measure q[1]->c[1]; measure q[2]->c[2];""")
         with self.assertRaisesRegex(VNextError,"UNSUPPORTED_QASM_GATE:cu1"):
