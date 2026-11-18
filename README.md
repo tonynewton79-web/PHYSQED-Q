@@ -45,13 +45,13 @@ Gate 8 established **our own Python-standard-library compilation and verificatio
 
 **Get the Gate 8 rotation compiler:** [working draft code and verified Gate 8 research](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29) · [Mark II research roadmap](https://github.com/tonynewton79-web/PHYSQED-Q/pulls) · [Gateway to the original PNNL QASMBench reference](https://github.com/pnnl/QASMBench).
 
-Run the Gate 8 rotation compiler from its source checkout (PR #29, not `main`). The `vnext_*` Python module identifiers are **legacy internal import paths**, not the product name:
+Run the Gate 8 rotation compiler from its source checkout (PR #29, not `main`). Older `vnext_*` module identifiers remain only for backwards compatibility; the recommended public command is `gate8_cli`:
 
 ```bash
-python -m physqed_q.vnext_cli demo --mode native --output gate8-native.json
-python -m physqed_q.vnext_cli verify gate8-native.json --numeric-check
-python -m physqed_q.vnext_cli demo --mode clifford_t --output gate8-clifford-t.json
-python -m physqed_q.vnext_cli verify gate8-clifford-t.json --numeric-check
+python -m physqed_q.gate8_cli demo --mode native --output gate8-native.json
+python -m physqed_q.gate8_cli verify gate8-native.json --numeric-check
+python -m physqed_q.gate8_cli demo --mode clifford_t --output gate8-clifford-t.json
+python -m physqed_q.gate8_cli verify gate8-clifford-t.json --numeric-check
 python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
 ```
 
