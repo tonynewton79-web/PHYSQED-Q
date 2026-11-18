@@ -1,4 +1,41 @@
-# PHYSQED-Q v0.6B — exact quantum-circuit compiler and verification workbench
+# PHYSQED-Q — Verification-First Quantum Compiler
+
+**Headline research release: PHYSQED-Q vNext Alpha (Gate 8)**  
+**Author: Tony Newton** · Independent quantum-circuit compilation, exact and bounded-error certificates, and reproducible verification.
+
+> **Research-release status:** The working vNext source is published in **[draft PR #29](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29)**. It has not been merged into \`main\`. The stable code currently on \`main\` remains the earlier bounded exact compiler, and the existing exact-certificate workflows remain intact. Do not mistake the research preview for the default installed version.
+
+## PHYSQED-Q vNext — Main research headline
+
+The next version is **our own Python-standard-library compilation and verification system**. Its mathematical core does **not** call Qiskit, PyZX, Qiskit Aer, or an IBM fake backend. We independently cross-check its results against Qiskit on the original published sources, but do not use Qiskit to produce vNext's circuits or certificates.
+
+| Verified Gate 8 research result | Evidence |
+| --- | --- |
+| **15 of 19** pinned, independently published PNNL QASMBench circuits admitted | Up from 10/19 in Gate 7; remaining four refusals recorded |
+| **26** literal decimal-radian approximation witnesses checked | Exact rational Machin-arctangent bounds for pi |
+| **15/15** admitted original-QASM operators independently cross-checked | Largest observed numerical Frobenius discrepancy about 7.1e-15 |
+| **Four new rotation families** | RZ, RX, RY, U3 with bounded rational-pi lowering |
+| **Our own target/error specification** | Explicit connectivity and conditional stochastic fault bounds |
+| **No live QPU tests** | No measured hardware fidelity, no claimed general T-count advantage |
+
+**Get vNext:** [working draft code and verified Gate 8 research](https://github.com/tonynewton79-web/PHYSQED-Q/pull/29) · [Mark II research roadmap](https://github.com/tonynewton79-web/PHYSQED-Q/pulls) · [Gateway to the original PNNL QASMBench reference](https://github.com/pnnl/QASMBench).
+
+Run the independent Gate 8 candidate from the source checkout (PR #29, not \`main\`):
+
+\`\`\`bash
+python -m physqed_q.vnext_cli demo --mode native --output vnext-native.json
+python -m physqed_q.vnext_cli verify vnext-native.json --numeric-check
+python -m physqed_q.vnext_cli demo --mode clifford_t --output vnext-ft.json
+python -m physqed_q.vnext_cli verify vnext-ft.json --numeric-check
+python -m unittest tests.test_vnext_rotations tests.test_vnext_qasm -v
+\`\`\`
+
+**Boundaries:** The certified projective-operator error is mathematical. A declared stochastic-noise target supplies a *conditional* output-error bound, not a measured processor calibration. The quarter-turn Clifford+T policy is deliberately coarse; it does not outperform state-of-the-art synthesis in general. The original QASMBench files are referenced by pinned hashes rather than redistributed.
+
+---
+
+## Earlier stable implementation on \`main\` — v0.6B
+
 
 **Copyright © 2026 Tony Newton.** See [copyright notice](COPYRIGHT.md).
 
