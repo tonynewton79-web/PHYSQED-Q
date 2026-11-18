@@ -76,8 +76,9 @@
             <select id="optimizer" aria-describedby="optimizer-help">
               <option value="adjacent">Adjacent rewrites (default · v1)</option>
               <option value="commuting">Disjoint commutation (opt-in · v2)</option>
+              <option value="phase">Z-axis phase commutation (opt-in · v3)</option>
             </select>
-            <p id="optimizer-help">Opt-in commutation moves only disjoint gates. Both strategies verify the full exact operator; Lean is a separate optional check.</p>
+            <p id="optimizer-help">Phase mode also commutes Z-axis phases across CZ and CNOT controls, never targets. All strategies verify the full exact operator; Lean is a separate optional check.</p>
           </div>
           <button type="button" id="run-button" class="btn btn-primary"><span class="button-glyph">▶</span><span>Optimize &amp; Verify</span><span class="button-end">→</span></button>
           <p class="button-footnote">Python computes exact matrices and replays every rewrite.</p>

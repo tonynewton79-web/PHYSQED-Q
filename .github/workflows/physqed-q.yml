@@ -52,6 +52,11 @@ jobs:
           python -m physqed_q verify /tmp/physqed-q-receipt.json
           python -m physqed_q compile examples/commuting.json --optimizer commuting --output /tmp/physqed-q-commuting.json
           python -m physqed_q verify /tmp/physqed-q-commuting.json
+          python -m physqed_q compile examples/phase_control.json --optimizer phase --output /tmp/physqed-q-phase.json
+          python -m physqed_q verify /tmp/physqed-q-phase.json
+          python -m benchmarks.phase_suite > /tmp/phase-first.json
+          python -m benchmarks.phase_suite > /tmp/phase-second.json
+          cmp /tmp/phase-first.json /tmp/phase-second.json
       - name: Exhaustive bounded optimality tests and independent CLI replay
         env:
           PYTHONPATH: .

@@ -47,5 +47,8 @@ jobs:
         run: |
           export PHYSQED_Q_LEAN_BIN="$(command -v lean)"
           python -m unittest discover -s tests -p test_lean_certificate.py -v
+      - name: Check phase-commuting receipt with pinned real Lean
+        run: |
+          PHYSQED_Q_LEAN_BIN="$(command -v lean)" python -m unittest discover -s tests -p test_phase_optimizer.py -v
       - name: Run standard Python regressions
         run: python -m unittest discover -s tests -v

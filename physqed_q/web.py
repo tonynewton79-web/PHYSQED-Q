@@ -164,8 +164,8 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
                 raise _HTTPInputError(400, "expected only the '" + field + "' field")
             if path == "/api/compile":
                 optimizer = payload.get("optimizer", "adjacent")
-                if type(optimizer) is not str or optimizer not in {"adjacent", "commuting"}:
-                    raise _HTTPInputError(400, "optimizer must be 'adjacent' or 'commuting'")
+                if type(optimizer) is not str or optimizer not in {"adjacent", "commuting", "phase"}:
+                    raise _HTTPInputError(400, "optimizer must be adjacent, commuting or phase")
                 receipt = compile_circuit(payload["circuit"], optimizer=optimizer)
                 result = {"receipt": receipt, "verification": verify_receipt(receipt)}
             elif path == "/api/verify":

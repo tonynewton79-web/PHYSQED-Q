@@ -76,12 +76,14 @@ def _qiskit_metrics(circuit):
     }
 
 
-def compare(raw, *, level=1, seed=2026):
+def compare(raw, *, level=1, seed=2026, optimizer="adjacent"):
     """Run fixed-basis Qiskit and PHYSQED-Q on the same bounded circuit."""
     if type(level) is not int or not 0 <= level <= 3:
         raise BenchmarkError("optimization level must be an integer 0..3")
     if type(seed) is not int or not 0 <= seed < 2**32:
         raise BenchmarkError("seed must be an unsigned 32-bit integer")
+    if optimizer not in ("adjacent", "commuting", "phase") or type(optimizer) is not str:
+        raise BenchmarkError("unsupported optimizer")
     try:
         source = validate_circuit(raw)
     except CircuitError as exc:
@@ -100,7 +102,7 @@ def compare(raw, *, level=1, seed=2026):
     output = transpile(original, basis_gates=list(BASIS),
                        optimization_level=level, seed_transpiler=seed)
 
-    certificate = compile_circuit(source)
+    certificate = compile_circuit(source, optimizer=optimizer)
     measured = {
         "schema": SCHEMA,
         "input_name": source["name"],
@@ -109,7 +111,8 @@ def compare(raw, *, level=1, seed=2026):
                      "basis_gates": list(BASIS), "backend": None,
                      "coupling_map": None},
         "physqed_q": {
-            "version": "0.1.0",
+            "version": "0.6B+phase-research",
+            "optimizer": optimizer,
             "input_metrics": metrics(source),
             "optimized_metrics": certificate["metrics"]["optimized"],
             "rewrites_exactly_replayed": len(certificate["steps"]),
@@ -145,6 +148,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="PHYSQED-Q circuit JSON")
     parser.add_argument("--level", type=int, choices=range(4), default=1)
+    parser.add_argument("--optimizer", choices=("adjacent", "commuting", "phase"),
+                        default="adjacent")
     parser.add_argument("--seed", type=int, default=2026)
     args = parser.parse_args(argv)
     try:
@@ -154,7 +159,8 @@ def main(argv=None):
             raise BenchmarkError("JSON input exceeds 256 KiB")
         raw = json.loads(payload.decode("utf-8"),
                          object_pairs_hook=_reject_duplicate_keys)
-        result = compare(raw, level=args.level, seed=args.seed)
+        result = compare(raw, level=args.level, seed=args.seed,
+                         optimizer=args.optimizer)
     except (OSError, UnicodeError, ValueError, RecursionError) as exc:
         print(f"BENCHMARK REJECTED: {exc}", file=sys.stderr)
         return 2

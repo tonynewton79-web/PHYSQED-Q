@@ -155,13 +155,13 @@ test('optimizer uses a labeled native select with legacy default and opt-in choi
   const select = html.match(/<select\b[^>]*id="optimizer"[^>]*>([\s\S]*?)<\/select>/);
   assert.ok(select, 'native optimizer select is present');
   const options = [...select[1].matchAll(/<option\b([^>]*)value="([^"]+)"([^>]*)>([^<]+)<\/option>/g)];
-  assert.deepEqual(options.map((option) => option[2]), ['adjacent', 'commuting']);
+  assert.deepEqual(options.map((option) => option[2]), ['adjacent', 'commuting', 'phase']);
   assert.ok(!/\bselected\b/.test(options[1][1] + options[1][3]), 'commuting is not selected by default');
   assert.doesNotMatch(select[0], /\bdisabled\b|tabindex="-1"/);
 });
 
 test('optimization submits the chosen strategy and does not claim Lean verification', async () => {
-  for (const optimizer of ['adjacent', 'commuting']) {
+  for (const optimizer of ['adjacent', 'commuting', 'phase']) {
     const context = withUI();
     vm.runInContext('bindControls()', context);
     context.document.getElementById('optimizer').value = optimizer;
@@ -172,14 +172,15 @@ test('optimization submits the chosen strategy and does not claim Lean verificat
     const circuit = { name: 'Empty', qubits: 2, gates: [] };
     const metrics = { gates: 0, depth: 0, t_gates: 0, two_qubit_gates: 0 };
     respond(request, { receipt: {
-      schema: `physqed-q-exact-receipt-v${optimizer === 'commuting' ? 2 : 1}`,
+      schema: `physqed-q-exact-receipt-v${optimizer === 'phase' ? 3 : optimizer === 'commuting' ? 2 : 1}`,
       input: circuit, optimized: circuit, steps: [],
       metrics: { input: metrics, optimized: metrics },
       operator_sha256: 'a'.repeat(64), receipt_sha256: 'b'.repeat(64),
       scope: { kernel: 'exact operator equality in Q(sqrt(2),i); at most four qubits',
         lean_kernel_verified: false, hardware_verified: false,
         quantum_advantage_demonstrated: false, integrity_not_authenticity: true,
-        ...(optimizer === 'commuting' ? { optimizer: 'commuting-disjoint-v1' } : {}) },
+        ...(optimizer === 'commuting' ? { optimizer: 'commuting-disjoint-v1' } :
+            optimizer === 'phase' ? { optimizer: 'phase-commuting-v1' } : {}) },
     },
       verification: { verified: true, rewrites_checked: 0, lean_kernel_verified: false } });
     await compile;

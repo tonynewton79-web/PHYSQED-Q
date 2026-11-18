@@ -8,6 +8,27 @@
 [![Lean receipt witnesses](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/lean-receipts.yml)
 [![Optional Qiskit comparison](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml/badge.svg)](https://github.com/tonynewton79-web/PHYSQED-Q/actions/workflows/qiskit-compare.yml)
 
+## Experimental v3: exact control-phase T cancellation (opt-in)
+
+This branch adds a 'phase' strategy: a Z-axis phase can be moved across
+CZ and across CNOT when the phase wire is the **control**. It does
+NOT pass across a CNOT target or a same-wire H/X/SWAP barrier.
+For example, T(0) CNOT(0,1) TDG(0) reduces exactly to CNOT(0,1),
+removing two T gates while preserving the *complete* unitary matrix.
+
+    python -m physqed_q compile examples/phase_control.json --optimizer phase --output /tmp/phase-v3.json
+    python -m physqed_q verify /tmp/phase-v3.json
+    python -m benchmarks.phase_suite
+
+V3 retains deterministic, adversarially replayed receipts, and a bounded
+two-qubit result can be separately checked with the Lean 4.24.0 bridge.
+A [proof, reproducibility note and physical-cost caveat](docs/phase_commutation_20261118.md)
+explain the exact family and limits. The positive improvement is versus
+the older **internal** policies on that family, **not** proven superiority
+to Qiskit, PyZX or other compilers. On physical superconducting qubits,
+T may be implemented as a virtual RZ, so fewer T labels do not by
+themselves imply reduced duration or hardware errors.
+
 ## Coherent graph-adjacency oracle and exact query counting (research addition)
 
 The default branch now contains the bounded coherent oracle
