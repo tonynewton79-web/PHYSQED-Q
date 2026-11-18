@@ -20,7 +20,7 @@ def table(m, assign, n):
         for o in range(size):
             v=1.
             for c,q in enumerate(assign):
-                v*=m[str(q)][(t>>c)&1][(o>>c)&1]
+                v*=(m[q] if q in m else m[str(q)])[(t>>c)&1][(o>>c)&1]
             A[o,t]=v
     return A
 
